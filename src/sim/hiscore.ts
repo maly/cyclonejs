@@ -1,4 +1,5 @@
 import type { GameOutcome } from "./game.ts";
+import type { LayoutMode } from "./placement.ts";
 
 export const HISCORE_LIMIT = 10;
 export const HISCORE_NAME_MAX = 10;
@@ -13,6 +14,12 @@ export interface HiscoreRecord {
   /** Čas zápisu, ISO. Při shodném skóre je starší záznam výš. */
   at: string;
   seed: number;
+  /** Náhodné, nebo originální bedny a lidé. Starší záznam bez pole je originál. */
+  layout: LayoutMode;
+  /** Desítkové číslo mapy. Null a chybějící pole je originál. */
+  map: string | null;
+  /** Verze generátoru souostroví. U originálu null. */
+  generator: number | null;
 }
 
 export interface HiscoreTable {
@@ -99,8 +106,15 @@ function readRecord(item: unknown): HiscoreRecord | null {
   if (!isName(record.name, false)) return null;
   if (!isFiniteNumber(record.score) || !isFiniteNumber(record.crates) || !isFiniteNumber(record.timeLeft)) return null;
   if (record.outcome !== "success" && record.outcome !== "failure") return null;
-  if (typeof record.at !== "string" || !Number.isFinite(Date.parse(record.at))) return null;
+  if (typeof record.at !== "string" || !isIsoTime(record.at)) return null;
   if (!isFiniteNumber(record.seed)) return null;
+  const layout = record.layout === undefined ? "original" : record.layout;
+  if (layout !== "random" && layout !== "original") return null;
+  const map = record.map === undefined || record.map === null ? null : record.map;
+  if (map !== null && (typeof map !== "string" || !/^\d+$/.test(map))) return null;
+  const generator = record.generator === undefined || record.generator === null ? null : record.generator;
+  if (generator !== null && (typeof generator !== "number" || !Number.isInteger(generator) || generator < 1)) return null;
+  if ((map === null) !== (generator === null)) return null;
   return {
     name: record.name,
     score: record.score,
@@ -109,7 +123,14 @@ function readRecord(item: unknown): HiscoreRecord | null {
     timeLeft: record.timeLeft,
     at: record.at,
     seed: record.seed,
+    layout,
+    map,
+    generator,
   };
+}
+
+function isIsoTime(value: string): boolean {
+  return /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/.test(value);
 }
 
 function isName(value: unknown, allowEmpty: boolean): value is string {

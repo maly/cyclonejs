@@ -407,6 +407,107 @@ button:hover {
   font-weight: 700;
 }
 
+.map-form {
+  pointer-events: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.map-form input,
+.procgen-bar input {
+  font: inherit;
+  width: 12em;
+  border: 1px solid #1d3a32;
+  background: #fffdf8;
+  padding: 2px 6px;
+}
+
+.map-form button,
+.procgen-bar button {
+  font: inherit;
+  font-weight: 700;
+  border: 1px solid #1d3a32;
+  background: #fffdf8;
+  padding: 2px 8px;
+  cursor: pointer;
+}
+
+.generating {
+  position: absolute;
+  z-index: 8;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #12343c;
+  color: #f4f1e4;
+  font-size: 28px;
+}
+
+.procgen {
+  min-height: 100vh;
+  padding: 16px;
+  background: #12343c;
+  color: #f4f1e4;
+}
+
+.procgen-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.procgen-stage {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.procgen-stage canvas {
+  width: min(638px, 100%);
+  height: auto;
+  image-rendering: pixelated;
+  background: #1c688a;
+}
+
+.procgen-stage pre {
+  margin: 0;
+  white-space: pre-wrap;
+  font: 15px/1.45 ui-monospace, monospace;
+}
+
+button.screen-action {
+  display: block;
+  font: inherit;
+  font-weight: 700;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  text-align: inherit;
+}
+
+button.screen-action[hidden] {
+  display: none;
+}
+
+.map-caption {
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+  margin: 0;
+  color: #f4f1e4;
+  font-size: 14px;
+  text-shadow: 0 1px 2px #000;
+}
+
 .score-breakdown div {
   display: grid;
   grid-template-columns: 1.1fr 1.2fr auto;

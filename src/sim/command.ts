@@ -34,6 +34,10 @@ export interface GameCommand {
   fillFuel: boolean;
   teleport: boolean;
   skipMinute: boolean;
+  /** Klávesa R. Na úvodu přepne rozmístění, na konci spustí stejný seed. */
+  toggleLayout: boolean;
+  /** Jen s ?debug. Další seed a nové rozmístění bez obnovení stránky. */
+  reseed: boolean;
 }
 
 export const IDLE_GAME: GameCommand = {
@@ -46,6 +50,8 @@ export const IDLE_GAME: GameCommand = {
   fillFuel: false,
   teleport: false,
   skipMinute: false,
+  toggleLayout: false,
+  reseed: false,
 };
 
 /** Zrychlení ve světových osách X a Z. Cyklon ho později naplní, teď je nulové. */

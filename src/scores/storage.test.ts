@@ -11,6 +11,9 @@ function record(): HiscoreRecord {
     timeLeft: 0,
     at: "2024-01-01T00:00:00.000Z",
     seed: 1,
+    layout: "random",
+    map: null,
+    generator: null,
   };
 }
 

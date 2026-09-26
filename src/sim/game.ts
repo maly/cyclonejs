@@ -28,7 +28,8 @@ import { createStorm, inCycloneEye, stepStorm, stormDistance, stormPush, windStr
 import { heliportIdAt, findHeliports, type Heliport, type HeliportMap } from "./heliports.ts";
 import { horizontalSpeed, interpolateHeli, spawnHeli, stepHeli, type HeliState } from "./helicopter.ts";
 import { advancePlane, launchPlane, overOpenWater, planeHits, planeWarning, randomPlaneGap, type Plane } from "./planes.ts";
-import { rngSeed } from "./rng.ts";
+import { deriveSeed, STREAM_CYCLONE, STREAM_PLANES } from "./rng.ts";
+import type { LayoutMode } from "./placement.ts";
 import { heightAt, type World } from "./world.ts";
 
 export type GamePhase = "intro" | "play" | "end";
@@ -76,7 +77,14 @@ export interface GameState {
   baseX: number;
   baseZ: number;
   seed: number;
+  /** Desítkové číslo mapy. Null je originál. */
+  mapSeed: string | null;
+  /** Verze generátoru. U originálu null. */
+  generator: number | null;
+  /** Proud cyklonu. Letadla mají vlastní. */
   rng: number;
+  planeRng: number;
+  layout: LayoutMode;
   storm: Storm;
   plane: Plane | null;
   planeCooldown: number;
@@ -115,6 +123,10 @@ export interface GameView {
   events: readonly GameEvent[];
   homeX: number;
   homeZ: number;
+  seed: number;
+  layout: LayoutMode;
+  mapSeed: string | null;
+  generator: number | null;
 }
 
 export interface CreateGameOptions {
@@ -124,14 +136,17 @@ export interface CreateGameOptions {
   baseZ?: number;
   seed?: number;
   debug?: boolean;
+  layout?: LayoutMode;
+  mapSeed?: string | null;
+  generator?: number | null;
 }
 
 export function createGame(world: World, options: CreateGameOptions = {}): GameState {
   const pads = findHeliports(world, options.baseX, options.baseZ);
   const home = homePosition(world, pads, options);
   const seed = options.seed ?? GAME_SEED;
-  const spawned = createStorm(world, home.x, home.z, rngSeed(seed));
-  const gap = randomPlaneGap(spawned.rng);
+  const spawned = createStorm(world, home.x, home.z, deriveSeed(seed, STREAM_CYCLONE));
+  const gap = randomPlaneGap(deriveSeed(seed, STREAM_PLANES));
   return {
     phase: "intro",
     paused: false,
@@ -156,7 +171,11 @@ export function createGame(world: World, options: CreateGameOptions = {}): GameS
     baseX: options.baseX ?? BASE_CELL_X,
     baseZ: options.baseZ ?? BASE_CELL_Z,
     seed,
-    rng: gap.rng,
+    mapSeed: options.mapSeed ?? null,
+    generator: options.generator ?? null,
+    rng: spawned.rng,
+    planeRng: gap.rng,
+    layout: options.layout ?? "original",
     storm: spawned.storm,
     plane: null,
     planeCooldown: gap.seconds,
@@ -192,6 +211,9 @@ export function stepGame(state: GameState, command: GameCommand, world: World, d
       baseZ: state.baseZ,
       seed: state.seed,
       debug: state.debug,
+      layout: state.layout,
+      mapSeed: state.mapSeed,
+      generator: state.generator,
     });
   }
   if (command.pause) return { ...state, paused: !state.paused, events: [] };
@@ -227,7 +249,8 @@ export function stepGame(state: GameState, command: GameCommand, world: World, d
   const events: GameEvent[] = [];
   const onHeliport = (x: number, z: number) => heliportIdAt(world, state.heliportMask, x, z) > 0;
   const movedStorm = stepStorm(state.storm, world, state.rng, dt);
-  let rng = movedStorm.rng;
+  const rng = movedStorm.rng;
+  let planeRng = state.planeRng;
   const storm = movedStorm.storm;
   const push = stormPush(storm, state.heli.x, state.heli.z);
   const grounded = state.heli.mode !== "air";
@@ -251,9 +274,9 @@ export function stepGame(state: GameState, command: GameCommand, world: World, d
     }
     plane = next;
   } else if (openWater && planeCooldown <= 0) {
-    const born = launchPlane(heli, storm, rng);
+    const born = launchPlane(heli, storm, planeRng);
     const gap = randomPlaneGap(born.rng);
-    rng = gap.rng;
+    planeRng = gap.rng;
     plane = advancePlane(born.plane, dt);
     planeCooldown = gap.seconds;
     events.push({ type: "plane-warning" });
@@ -324,6 +347,7 @@ export function stepGame(state: GameState, command: GameCommand, world: World, d
     score,
     events,
     rng,
+    planeRng,
     storm,
     plane,
     planeCooldown,
@@ -406,6 +430,10 @@ export function toView(state: GameState, world: World, events: readonly GameEven
     events,
     homeX: state.homeX,
     homeZ: state.homeZ,
+    seed: state.seed,
+    layout: state.layout,
+    mapSeed: state.mapSeed,
+    generator: state.generator,
   };
 }
 

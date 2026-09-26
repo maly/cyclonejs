@@ -5,10 +5,11 @@ import { CHIMNEY, PILLAR_CAP, PILLAR_SHAFT, ROOF } from "./style.ts";
 const OVERHANG = 0.16;
 const RISE = 0.42;
 
-/** Osamělá bílá buňka ve výšce 7. Není to heliport. */
+/** Osamělá bílá buňka ve výšce 6 nebo 7. Není to heliport. */
 export function isPillar(world: World, x: number, z: number): boolean {
   const index = z * world.width + x;
-  if (world.surface[index] !== 4 || world.height[index] !== 7) return false;
+  const height = world.height[index] ?? 0;
+  if (world.surface[index] !== 4 || (height !== 6 && height !== 7)) return false;
   return neighborSurface(world, x + 1, z) !== 4
     && neighborSurface(world, x - 1, z) !== 4
     && neighborSurface(world, x, z + 1) !== 4
@@ -31,12 +32,14 @@ function createPillars(world: World): Group {
   for (let z = 0; z < world.depth; z++) {
     for (let x = 0; x < world.width; x++) {
       if (!isPillar(world, x, z)) continue;
+      const scale = (world.height[z * world.width + x] ?? 7) / 7;
       const body = new Mesh(new BoxGeometry(0.28, 6.35, 0.28), shaft);
-      body.position.set(x + 0.5, 3.18, z + 0.5);
+      body.scale.set(1, scale, 1);
+      body.position.set(x + 0.5, 3.18 * scale, z + 0.5);
       const head = new Mesh(new BoxGeometry(0.42, 0.5, 0.42), cap);
-      head.position.set(x + 0.5, 6.5, z + 0.5);
+      head.position.set(x + 0.5, 6.5 * scale, z + 0.5);
       const light = new Mesh(new BoxGeometry(0.2, 0.16, 0.2), lamp);
-      light.position.set(x + 0.5, 6.82, z + 0.5);
+      light.position.set(x + 0.5, 6.82 * scale, z + 0.5);
       group.add(body, head, light);
     }
   }

@@ -28,9 +28,19 @@ export interface World {
   height: Uint8Array;
   surface: Uint8Array;
   estimated: Uint8Array;
+  /**
+   * 0 je moře nebo buňka mimo ostrov. Jinak je to číslo ostrova z `terrain.json` plus jedna,
+   * protože ostrov 0 je platná skupina.
+   */
+  island?: Uint8Array;
   trees: TreeObstacle[];
   people: ActorMark[];
   crates: CrateMark[];
+  /** Buňka heliportu základny. Originální mapa ji neukládá a platí výchozí základna. */
+  baseX?: number;
+  baseZ?: number;
+  /** Jména ostrovů podle čísla z mapy. */
+  islandNames?: string[];
 }
 
 const TREE_TYPES = new Set(["topol", "smrk_a", "smrk_b", "smrk_c"]);
@@ -41,6 +51,7 @@ export function worldFromTerrain(terrain: TerrainFile): World {
   const height = new Uint8Array(width * depth);
   const surface = new Uint8Array(width * depth);
   const estimated = new Uint8Array(width * depth);
+  const islandMap = new Uint8Array(width * depth);
 
   for (const island of terrain.islands) {
     for (let row = 0; row < island.h; row++) {
@@ -53,6 +64,7 @@ export function worldFromTerrain(terrain: TerrainFile): World {
         surface[index] = island.surface[offset];
         height[index] = surface[index] === 0 ? 0 : island.height[offset];
         estimated[index] = island.estimated[offset] ? 1 : 0;
+        if (surface[index] !== 0) islandMap[index] = island.id + 1;
       }
     }
   }
@@ -70,6 +82,7 @@ export function worldFromTerrain(terrain: TerrainFile): World {
     height,
     surface,
     estimated,
+    island: islandMap,
     trees,
     people: terrain.people.map((person) => ({ type: person.type, x: person.x, z: person.y })),
     crates: terrain.crates.map((crate) => ({ x: crate.x, z: crate.y })),
@@ -111,6 +124,15 @@ export function surfaceAt(world: World, x: number, z: number): number {
 export function estimatedAt(world: World, x: number, z: number): boolean {
   const index = cellIndex(world, x, z);
   return index !== null && world.estimated[index] === 1;
+}
+
+/** Číslo ostrova z mapy. Moře a buňka bez skupiny vrací null. */
+export function islandIdAt(world: World, x: number, z: number): number | null {
+  if (!world.island) return null;
+  const index = cellIndex(world, x, z);
+  if (index === null) return null;
+  const code = world.island[index];
+  return code === 0 ? null : code - 1;
 }
 
 export const SURFACE_NAME = ["moře", "tráva", "písek", "silnice", "bílá", "střecha", "beton"] as const;

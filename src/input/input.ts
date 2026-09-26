@@ -14,6 +14,8 @@ export function createInput(target: Window = window, debug = false): { sample: (
   let fuelEdge = false;
   let teleportEdge = false;
   let minuteEdge = false;
+  let layoutEdge = false;
+  let reseedEdge = false;
   let padWasX = false;
 
   const onKeyDown = (event: KeyboardEvent) => {
@@ -25,6 +27,8 @@ export function createInput(target: Window = window, debug = false): { sample: (
     if (debug && event.code === "KeyF") fuelEdge = true;
     if (debug && event.code === "KeyT") teleportEdge = true;
     if (debug && event.code === "KeyK") minuteEdge = true;
+    if (event.code === "KeyR") layoutEdge = true;
+    if (debug && event.code === "KeyL") reseedEdge = true;
     if (event.code === "Space") confirmEdge = true;
     if (event.code === "Escape") pauseEdge = true;
     held.add(event.code);
@@ -48,6 +52,8 @@ export function createInput(target: Window = window, debug = false): { sample: (
       const fillFuel = fuelEdge;
       const teleport = teleportEdge;
       const skipMinute = minuteEdge;
+      const toggleLayout = layoutEdge;
+      const reseed = reseedEdge;
       viewEdge = false;
       confirmEdge = false;
       pauseEdge = false;
@@ -57,6 +63,8 @@ export function createInput(target: Window = window, debug = false): { sample: (
       fuelEdge = false;
       teleportEdge = false;
       minuteEdge = false;
+      layoutEdge = false;
+      reseedEdge = false;
       padWasX = pad.x;
       const flight: FlightCommand = {
         climb: held.has("KeyQ") || held.has("ArrowUp") || pad.climb,
@@ -66,7 +74,7 @@ export function createInput(target: Window = window, debug = false): { sample: (
         forward: held.has("Space") || pad.forward,
         toggleView,
       };
-      return { flight, confirm, pause, toggleMap, toggleMute, god, fillFuel, teleport, skipMinute };
+      return { flight, confirm, pause, toggleMap, toggleMute, god, fillFuel, teleport, skipMinute, toggleLayout, reseed };
     },
   };
 }
@@ -89,7 +97,9 @@ function isFlightCode(code: string): boolean {
     code === "KeyG" ||
     code === "KeyF" ||
     code === "KeyT" ||
-    code === "KeyK"
+    code === "KeyK" ||
+    code === "KeyR" ||
+    code === "KeyL"
   );
 }
 

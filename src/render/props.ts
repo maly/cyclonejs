@@ -30,6 +30,7 @@ const womanDress = tint(WOMAN_DRESS);
 export interface PropActors {
   group: Group;
   sync(view: GameView, time: number): void;
+  relayout(): void;
 }
 
 export function createProps(world: World): PropActors {
@@ -38,23 +39,29 @@ export function createProps(world: World): PropActors {
   const trees = createTrees(world.trees);
   group.add(trees.group, createBuildings(world));
 
-  const people: { group: Group; arms: Group[]; x: number; z: number; base: number; seed: number }[] = [];
-  for (const person of world.people) {
-    const model = personModel(person.type);
-    const base = groundAt(world, person.x, person.z);
-    model.group.position.set(person.x + 0.5, base, person.z + 0.5);
-    group.add(model.group);
-    people.push({ group: model.group, arms: model.arms, x: person.x + 0.5, z: person.z + 0.5, base, seed: hash(person.x, person.z) });
-  }
-
-  const crates: { group: Group; x: number; z: number; base: number }[] = [];
-  for (const crate of world.crates) {
-    const holder = crateModel();
-    const base = groundAt(world, crate.x, crate.z);
-    holder.position.set(crate.x + 0.5, base, crate.z + 0.5);
-    group.add(holder);
-    crates.push({ group: holder, x: crate.x + 0.5, z: crate.z + 0.5, base });
-  }
+  let people: { group: Group; arms: Group[]; x: number; z: number; base: number; seed: number }[] = [];
+  let crates: { group: Group; x: number; z: number; base: number }[] = [];
+  const mountActors = () => {
+    for (const person of people) person.group.removeFromParent();
+    for (const crate of crates) crate.group.removeFromParent();
+    people = [];
+    crates = [];
+    for (const person of world.people) {
+      const model = personModel(person.type);
+      const base = groundAt(world, person.x, person.z);
+      model.group.position.set(person.x + 0.5, base, person.z + 0.5);
+      group.add(model.group);
+      people.push({ group: model.group, arms: model.arms, x: person.x + 0.5, z: person.z + 0.5, base, seed: hash(person.x, person.z) });
+    }
+    for (const crate of world.crates) {
+      const holder = crateModel();
+      const base = groundAt(world, crate.x, crate.z);
+      holder.position.set(crate.x + 0.5, base, crate.z + 0.5);
+      group.add(holder);
+      crates.push({ group: holder, x: crate.x + 0.5, z: crate.z + 0.5, base });
+    }
+  };
+  mountActors();
 
   const winch = createWinch();
   group.add(winch.group);
@@ -65,6 +72,9 @@ export function createProps(world: World): PropActors {
 
   return {
     group,
+    relayout() {
+      mountActors();
+    },
     sync(view, time) {
       trees.sway(time, view.wind);
       const dt = previousTime > 0 ? Math.min(0.05, Math.max(0, time - previousTime)) : 1 / 60;

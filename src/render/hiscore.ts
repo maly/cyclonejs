@@ -39,6 +39,7 @@ export function createHiscoreUi(store: HiscoreStore = browserHiscoreStore()): Hi
   const endName = document.querySelector<HTMLElement>("#end-name");
   const endBoard = document.querySelector<HTMLElement>("#end-board");
   const endContinue = document.querySelector<HTMLElement>("#end-continue");
+  const endReplay = document.querySelector<HTMLElement>("#end-replay");
   const best = document.querySelector<HTMLElement>("#hud-best");
 
   window.addEventListener("keydown", onKey);
@@ -70,11 +71,11 @@ export function createHiscoreUi(store: HiscoreStore = browserHiscoreStore()): Hi
     if (mode === "naming") {
       if (endName) endName.hidden = false;
       if (endBoard) endBoard.hidden = true;
-      if (endContinue) endContinue.hidden = true;
+      showContinue(false);
     } else if (mode === "board") {
       if (endName) endName.hidden = true;
       if (endBoard) endBoard.hidden = false;
-      if (endContinue) endContinue.hidden = false;
+      showContinue(true);
     }
     tickIntro(state.phase === "intro", now);
   }
@@ -109,6 +110,9 @@ export function createHiscoreUi(store: HiscoreStore = browserHiscoreStore()): Hi
       timeLeft: wholeSecondsLeft(snapshot.timeLeft),
       at: new Date().toISOString(),
       seed: snapshot.seed,
+      layout: snapshot.layout,
+      map: snapshot.mapSeed,
+      generator: snapshot.generator,
     };
     const saved = insertHiscore(table, record);
     table = saved.table;
@@ -120,7 +124,7 @@ export function createHiscoreUi(store: HiscoreStore = browserHiscoreStore()): Hi
     paintIntro();
     if (endName) endName.hidden = true;
     if (endBoard) endBoard.hidden = false;
-    if (endContinue) endContinue.hidden = false;
+    showContinue(true);
   }
 
   function paintName(): void {
@@ -145,7 +149,12 @@ export function createHiscoreUi(store: HiscoreStore = browserHiscoreStore()): Hi
   function hideEnd(): void {
     if (endName) endName.hidden = true;
     if (endBoard) endBoard.hidden = true;
-    if (endContinue) endContinue.hidden = false;
+    showContinue(true);
+  }
+
+  function showContinue(show: boolean): void {
+    if (endContinue) endContinue.hidden = !show;
+    if (endReplay) endReplay.hidden = !show;
   }
 
   function tickIntro(active: boolean, now: number): void {
@@ -171,14 +180,19 @@ export function createHiscoreUi(store: HiscoreStore = browserHiscoreStore()): Hi
 function boardHtml(table: HiscoreTable, marked: number): string {
   const rows =
     table.records.length === 0
-      ? `<tr><td colspan="5">Žádné záznamy</td></tr>`
+      ? `<tr><td colspan="6">Žádné záznamy</td></tr>`
       : table.records
           .map((record, index) => {
             const fresh = index === marked ? " class=\"fresh\"" : "";
-            return `<tr${fresh}><td>${index + 1}</td><td>${escapeHtml(record.name)}</td><td>${record.score}</td><td>${record.crates}</td><td>${escapeHtml(formatDate(record.at))}</td></tr>`;
+            return `<tr${fresh}><td>${index + 1}</td><td>${escapeHtml(record.name)}</td><td>${record.score}</td><td>${record.crates}</td><td>${escapeHtml(formatDate(record.at))}</td><td>${escapeHtml(mapLabel(record.map))}</td></tr>`;
           })
           .join("");
-  return `<h1>Rekordy</h1><table class="hiscore-table"><thead><tr><th>#</th><th>jméno</th><th>skóre</th><th>bedny</th><th>datum</th></tr></thead><tbody>${rows}</tbody></table>`;
+  return `<h1>Rekordy</h1><table class="hiscore-table"><thead><tr><th>#</th><th>jméno</th><th>skóre</th><th>bedny</th><th>datum</th><th>mapa</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+function mapLabel(map: string | null): string {
+  if (map === null) return "orig";
+  return map.length > 12 ? `${map.slice(0, 10)}…` : map;
 }
 
 function formatDate(at: string): string {

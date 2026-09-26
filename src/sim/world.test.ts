@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import type { TerrainFile } from "./terrainTypes.ts";
-import { heightAt, surfaceAt, worldFromTerrain } from "./world.ts";
+import { heightAt, islandIdAt, surfaceAt, worldFromTerrain } from "./world.ts";
 
 const terrain = JSON.parse(readFileSync("data/map/terrain.json", "utf8")) as TerrainFile;
 
@@ -22,6 +22,7 @@ describe("svět", () => {
     expect(heightAt(world, x + 0.5, z + 0.5)).toBe(world.height[index]);
     expect(heightAt(world, 270.5, 309.5)).toBe(1);
     expect(surfaceAt(world, 270.5, 309.5)).toBe(4);
+    expect(islandIdAt(world, 270.5, 309.5)).toBe(7);
   });
 
   it("strom sahá o svou výšku nad terén paty", () => {

@@ -17,6 +17,9 @@ function record(patch: Partial<HiscoreRecord> = {}): HiscoreRecord {
     timeLeft: 40,
     at: "2020-01-01T00:00:00.000Z",
     seed: 1,
+    layout: "original",
+    map: null,
+    generator: null,
     ...patch,
   };
 }
@@ -35,6 +38,23 @@ describe("tabulka rekordů", () => {
     expect(parseHiscores("[]")).toBeNull();
     expect(parseHiscores("{\"version\":2,\"lastName\":\"\",\"records\":[]}")).toBeNull();
     expect(parseHiscores("{\"version\":1,\"lastName\":\"\",\"records\":[{\"name\":\"\"}]}")).toBeNull();
+  });
+
+  it("uloží rozmístění a u starého záznamu bez něj nechá originál", () => {
+    const saved = insertHiscore(emptyHiscores(), record({ layout: "random", seed: 42 })).table;
+    const raw = JSON.parse(JSON.stringify(saved)) as { records: Array<Record<string, unknown>> };
+    expect(raw.records[0]?.layout).toBe("random");
+    expect(raw.records[0]?.seed).toBe(42);
+    delete raw.records[0]?.layout;
+    delete raw.records[0]?.map;
+    delete raw.records[0]?.generator;
+    const legacy = parseHiscores(JSON.stringify(raw));
+    expect(legacy?.records[0]?.layout).toBe("original");
+    expect(legacy?.records[0]?.seed).toBe(42);
+    expect(legacy?.records[0]?.map).toBeNull();
+    expect(legacy?.records[0]?.generator).toBeNull();
+    raw.records[0]!.layout = "jiné";
+    expect(parseHiscores(JSON.stringify(raw))).toBeNull();
   });
 
   it("prázdná tabulka přijme i nulové skóre", () => {

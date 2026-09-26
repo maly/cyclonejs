@@ -55,8 +55,16 @@ export function createHud(root: HTMLElement, debug: boolean): Hud {
         <li>Q a šipka nahoru stoupání, A a šipka dolů klesání</li>
         <li>O a šipka vlevo, P a šipka vpravo zatáčení</li>
         <li>Mezerník dopředu, N pohled</li>
-        <li>M mapa, S zvuk, Esc pauza</li>
+        <li>M mapa, S zvuk, Esc pauza, R rozmístění</li>
       </ul>
+      <p id="intro-layout" class="screen-action">Rozmístění: náhodné</p>
+      <p id="intro-map" class="screen-action">Mapa: Originál</p>
+      <form id="map-form" class="map-form">
+        <label>Číslo <input id="map-number" inputmode="numeric" autocomplete="off" spellcheck="false" /></label>
+        <button type="submit">Souostroví</button>
+        <button type="button" id="map-original">Originál</button>
+      </form>
+      <p class="screen-action">G vylosuje souostroví, Enter ho použije</p>
       <p class="screen-action">Mezerník spustí hru</p>
     </div>
   `;
@@ -72,7 +80,10 @@ export function createHud(root: HTMLElement, debug: boolean): Hud {
       <div id="end-score" class="score-breakdown"></div>
       <div id="end-name" hidden></div>
       <div id="end-board" hidden></div>
-      <p class="screen-action" id="end-continue">Mezerník — návrat na úvod</p>
+      <p id="end-seed"></p>
+      <p id="end-map"></p>
+      <button type="button" class="screen-action" id="end-replay">Hrát znovu stejnou hru</button>
+      <p class="screen-action" id="end-continue">Mezerník — nová hra</p>
     </div>
   `;
   root.appendChild(end);
@@ -120,6 +131,14 @@ export function createHud(root: HTMLElement, debug: boolean): Hud {
       pause.hidden = !(playing && view.paused);
       title.hidden = view.phase !== "intro";
       end.hidden = view.phase !== "end";
+      const layout = document.querySelector("#intro-layout");
+      if (layout) layout.textContent = view.layout === "original" ? "Rozmístění: originální" : "Rozmístění: náhodné";
+      const mapLine = document.querySelector("#intro-map");
+      if (mapLine) mapLine.textContent = mapCaption(view.mapSeed, view.generator);
+      const seedLine = document.querySelector("#end-seed");
+      if (seedLine && view.phase === "end") seedLine.textContent = `Seed ${view.seed >>> 0}`;
+      const endMap = document.querySelector("#end-map");
+      if (endMap && view.phase === "end") endMap.textContent = mapCaption(view.mapSeed, view.generator);
 
       const alert = take("plane-alert");
       alert.textContent = view.planeAlert ?? "";
@@ -164,6 +183,11 @@ export function createHud(root: HTMLElement, debug: boolean): Hud {
       }
     },
   };
+}
+
+function mapCaption(mapSeed: string | null, generator: number | null): string {
+  if (!mapSeed || generator === null) return "Mapa: Originál";
+  return `Souostroví č. ${mapSeed} · generátor ${generator}`;
 }
 
 function fillEnd(view: GameView): void {

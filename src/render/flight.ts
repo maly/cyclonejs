@@ -43,7 +43,7 @@ import { createHud } from "./hud.ts";
 import { createMinimap } from "./minimap.ts";
 import { createPlaneVisual } from "./plane.ts";
 import { createProps } from "./props.ts";
-import { createRadar } from "./radar.ts";
+import { createRadar, type MapOverlay } from "./radar.ts";
 import { createSea } from "./sea.ts";
 import { createStormVisual } from "./storm.ts";
 import { HEMI_GROUND, HEMI_INTENSITY, HEMI_SKY, SUN_COLOR, SUN_DIR, SUN_INTENSITY } from "./style.ts";
@@ -56,6 +56,7 @@ export interface FlightView {
   noseWorld(): { x: number; y: number; z: number };
   tailWorld(): { x: number; y: number; z: number };
   toggleMap(): void;
+  showLayout(overlay: MapOverlay): void;
 }
 
 export function startFlight(root: HTMLElement, world: World, debug: boolean): FlightView {
@@ -101,8 +102,8 @@ export function startFlight(root: HTMLElement, world: World, debug: boolean): Fl
   const crash = createCrashVisual();
   const plane = createPlaneVisual();
   scene.add(heli.root, heli.shadow, storm.group, storm.rain, crash.group, plane.group);
-  const pads = findHeliports(world).list;
-  const radar = createRadar(root, world, pads);
+  const pads = findHeliports(world, world.baseX, world.baseZ).list;
+  const radar = createRadar(root, world, pads, debug);
   const minimap = createMinimap(root, world, pads);
   let zoom = 1;
 
@@ -135,13 +136,19 @@ export function startFlight(root: HTMLElement, world: World, debug: boolean): Fl
   planePath.visible = debug;
   scene.add(windRing, dangerRing, innerRing, planePath);
   const crateMark = new SphereGeometry(0.35, 6, 5);
-  const crateMarks = world.crates.map((crate) => {
-    const mesh = new Mesh(crateMark, new MeshBasicMaterial({ color: 0xf0a020 }));
-    mesh.position.set(crate.x + 0.5, heightAt(world, crate.x + 0.5, crate.z + 0.5) + 1.4, crate.z + 0.5);
-    mesh.visible = debug;
-    return mesh;
-  });
-  scene.add(...crateMarks);
+  const crateMaterial = new MeshBasicMaterial({ color: 0xf0a020 });
+  let crateMarks: Mesh[] = [];
+  const mountCrateMarks = () => {
+    for (const mesh of crateMarks) scene.remove(mesh);
+    crateMarks = world.crates.map((crate) => {
+      const mesh = new Mesh(crateMark, crateMaterial);
+      mesh.position.set(crate.x + 0.5, heightAt(world, crate.x + 0.5, crate.z + 0.5) + 1.4, crate.z + 0.5);
+      mesh.visible = debug;
+      return mesh;
+    });
+    scene.add(...crateMarks);
+  };
+  mountCrateMarks();
   const freeCamera = new PerspectiveCamera(50, viewAspect(root), 0.1, 4000);
   const controls = new OrbitControls(freeCamera, renderer.domElement);
   controls.enabled = false;
@@ -280,6 +287,11 @@ export function startFlight(root: HTMLElement, world: World, debug: boolean): Fl
     },
     toggleMap() {
       radar.toggle();
+    },
+    showLayout(overlay) {
+      props.relayout();
+      mountCrateMarks();
+      radar.setOverlay(overlay);
     },
     noseWorld() {
       heli.nose.getWorldPosition(scratch);
