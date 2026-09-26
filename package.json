@@ -1,0 +1,32 @@
+{
+  "name": "cyclone",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "mapgen:build": "tsx tools/mapgen/build.ts",
+    "mapgen:render": "tsx tools/mapgen/render.ts",
+    "mapgen:verify": "tsx tools/mapgen/verify.ts",
+    "mapgen:terrain": "tsx tools/mapgen/terrain-cli.ts",
+    "mapgen": "npm run mapgen:build && npm run mapgen:render && npm run mapgen:verify",
+    "dev": "vite",
+    "build": "vite build",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "three": "^0.180.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.6",
+    "@types/pngjs": "^6.0.5",
+    "@types/three": "^0.186.0",
+    "pngjs": "^7.0.0",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3",
+    "vite": "^7.1.5",
+    "vitest": "^3.2.7"
+  }
+}

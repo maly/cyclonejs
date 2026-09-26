@@ -1,0 +1,16 @@
+export const INPUT_PNG = "assets-src/CycloneMapClean.png";
+export const ATLAS_JSON = "data/map/atlas.json";
+export const WORLD_JSON = "data/map/world.json";
+export const SEA_JSON = "data/map/sea.json";
+export const OUT_DIR = "tools/mapgen/out";
+export const RENDER_PNG = "tools/mapgen/out/render.png";
+export const ATLAS_PREVIEW_PNG = "tools/mapgen/out/atlas_preview.png";
+export const ISLANDS_PNG = "tools/mapgen/out/islands.png";
+export const DIFF_PNG = "tools/mapgen/out/diff.png";
+export const SEMANTICS_JSON = "data/map/semantics.json";
+export const TERRAIN_JSON = "data/map/terrain.json";
+export const TERRAIN_ISSUES_JSON = "data/map/terrain-issues.json";
+export const TERRAIN_PATCHES_JSON = "data/map/terrain-patches.json";
+export const HEIGHTS_PNG = "tools/mapgen/out/heights.png";
+export const REGIONS_PNG = "tools/mapgen/out/regions.png";
+export const TERRAIN_DIFF_PNG = "tools/mapgen/out/terrain_diff.png";
