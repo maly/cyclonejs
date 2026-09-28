@@ -25,6 +25,8 @@ const ROAD = 3;
 const WHITE = 4;
 const ROOF = 5;
 
+type IslandForm = "blob" | "crescent" | "bay" | "sand";
+
 interface Draft {
   id: number;
   cluster: number;
@@ -33,6 +35,8 @@ interface Draft {
   z: number;
   rx: number;
   ry: number;
+  /** Tvar vybraný ve fázi obrysu. Výšky a písek se podle něj větví. */
+  form: IslandForm;
 }
 
 interface Grid {
@@ -55,7 +59,7 @@ interface Rect {
  */
 export function generateWorld(mapSeed: bigint): World {
   const root = generatorState(mapSeed);
-  let last = "nepodařilo se sestavit souostroví";
+  let last = "failed to assemble an archipelago";
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
     const built = tryBuild(deriveAttempt(root, attempt), mapSeed);
     if (!built.world) {
@@ -66,7 +70,7 @@ export function generateWorld(mapSeed: bigint): World {
     if (report.ok) return built.world;
     last = report.reasons.join("; ");
   }
-  throw new Error(`Generátor verze ${GENERATOR_VERSION} nenašel platné souostroví pro číslo ${mapSeed}: ${last}`);
+  throw new Error(`Generator version ${GENERATOR_VERSION} found no valid archipelago for number ${mapSeed}: ${last}`);
 }
 
 /** Seed rozmístění beden a lidí. Závisí na čísle mapy a na seedu hry, ne na ostatních fázích. */
@@ -167,7 +171,7 @@ function tryBuild(root: RngState, mapSeed: bigint): { world: World | null; reaso
     islandNames: titled.names,
   };
   const placed = placeFromSeed(world, indexPlacement(world), layoutSeed(mapSeed, 0), "random");
-  if (placed.fallback) return { world: null, reason: "rozmístění beden se nepovedlo" };
+  if (placed.fallback) return { world: null, reason: "crate placement failed" };
   applyPlacement(world, placed);
   return { world, reason: "" };
 }
@@ -194,7 +198,7 @@ function planIslands(state: RngState): { state: RngState; drafts: Draft[] | null
   state = baseX.state;
   const baseZ = nextInt(state, Math.floor(WORLD_DEPTH / 3) + 24, Math.floor((2 * WORLD_DEPTH) / 3) - 24);
   state = baseZ.state;
-  const base: Draft = { id: alloc(true), cluster: 0, base: true, x: baseX.value, z: baseZ.value, rx: baseRx.value, ry: baseRy.value };
+  const base: Draft = { id: alloc(true), cluster: 0, base: true, x: baseX.value, z: baseZ.value, rx: baseRx.value, ry: baseRy.value, form: "blob" };
   drafts.push(base);
 
   let left = total - 1;
@@ -224,20 +228,20 @@ function planIslands(state: RngState): { state: RngState; drafts: Draft[] | null
       state = long.state;
       const short = nextInt(state, 8, long.value);
       state = short.state;
-      members.push({ id: alloc(false), cluster, base: false, x: 0, z: 0, rx: long.value, ry: short.value });
+      members.push({ id: alloc(false), cluster, base: false, x: 0, z: 0, rx: long.value, ry: short.value, form: "blob" });
     }
     const anchor = members[0];
-    if (!anchor) return { state, drafts: null, reason: "chybí ostrov skupiny" };
+    if (!anchor) return { state, drafts: null, reason: "the group is missing an island" };
     const placed = placeApart(state, anchor, drafts, 160);
     state = placed.state;
-    if (!placed.ok) return { state, drafts: null, reason: "ostrovy se nevejdou do moře" };
+    if (!placed.ok) return { state, drafts: null, reason: "the islands do not fit in the sea" };
     drafts.push(anchor);
     for (let index = 1; index < members.length; index++) {
       const member = members[index];
       if (!member) continue;
       const near = placeNear(state, member, anchor, drafts, 80);
       state = near.state;
-      if (!near.ok) return { state, drafts: null, reason: "skupina ostrovů se nevešla" };
+      if (!near.ok) return { state, drafts: null, reason: "the island group did not fit" };
       drafts.push(member);
     }
     cluster += 1;
@@ -292,6 +296,18 @@ function reachOf(draft: Draft): number {
 
 function rasterIslands(grid: Grid, drafts: readonly Draft[], state: RngState): { state: RngState; ok: boolean; reason: string } {
   for (const draft of drafts) {
+    const formRoll = nextInt(state, 0, 99);
+    state = formRoll.state;
+    draft.form = "blob";
+    if (!draft.base) {
+      if (formRoll.value < 30) draft.form = "crescent";
+      else if (formRoll.value < 55) draft.form = "bay";
+      else if (formRoll.value < 78) draft.form = "sand";
+    }
+    if (draft.form === "crescent") {
+      state = stampHook(grid, draft, state);
+      continue;
+    }
     const saltRoll = nextInt(state, 1, 0x7ffffffe);
     state = saltRoll.state;
     const salt = saltRoll.value;
@@ -345,21 +361,22 @@ function rasterIslands(grid: Grid, drafts: readonly Draft[], state: RngState): {
         grid.height[index] = 1;
       }
     }
+    if (draft.form === "bay") state = carveLagoon(grid, draft, state);
   }
   fillSmallHoles(grid, 1);
   removeIsolated(grid);
   for (const draft of drafts) {
-    if (!keepLargest(grid, draft.id)) return { state, ok: false, reason: "ostrov se rozpadl" };
+    if (!keepLargest(grid, draft.id)) return { state, ok: false, reason: "an island broke apart" };
     const box = measure(grid, draft.id);
-    if (!box) return { state, ok: false, reason: "ostrov zmizel" };
+    if (!box) return { state, ok: false, reason: "an island disappeared" };
     const long = box.w > box.h ? box.w : box.h;
-    if (long < 15 || long > 84 || box.area < 60) return { state, ok: false, reason: "ostrov má špatnou velikost" };
+    if (long < 15 || long > 84 || box.area < 60) return { state, ok: false, reason: "an island has the wrong size" };
   }
   const areas = drafts.map((draft) => measure(grid, draft.id)?.area ?? 0);
   const baseArea = areas[drafts.findIndex((draft) => draft.base)] ?? 0;
   let largest = 0;
   for (const area of areas) if (area > largest) largest = area;
-  if (baseArea < largest) return { state, ok: false, reason: "základna není mezi největšími" };
+  if (baseArea < largest) return { state, ok: false, reason: "the base is not among the largest islands" };
   return { state, ok: true, reason: "" };
 }
 
@@ -386,6 +403,123 @@ function sector(dx: number, dz: number): number {
   return 1;
 }
 
+/** Tlustý oblouk otevřený na jednu stranu. Střednice je kvadratická, tělo má poloměr 3. */
+function stampHook(grid: Grid, draft: Draft, state: RngState): RngState {
+  const facing = nextInt(state, 0, 3);
+  state = facing.state;
+  const radius = 3;
+  const startX = Math.floor(draft.rx * 0.35);
+  const startZ = -draft.ry + radius;
+  const bendX = -draft.rx + radius;
+  const endZ = draft.ry - radius;
+  const steps = (draft.rx + draft.ry) * 2;
+  for (let step = 0; step <= steps; step++) {
+    const t = step / steps;
+    const u = 1 - t;
+    const x = u * u * startX + 2 * u * t * bendX + t * t * startX;
+    const z = u * u * startZ + t * t * endZ;
+    const turned = turnOffset(Math.round(x), Math.round(z), facing.value);
+    stampDisk(grid, draft, draft.x + turned.x, draft.z + turned.z, radius, false);
+  }
+  return state;
+}
+
+function turnOffset(dx: number, dz: number, facing: number): { x: number; z: number } {
+  if (facing === 1) return { x: -dz, z: dx };
+  if (facing === 2) return { x: -dx, z: -dz };
+  if (facing === 3) return { x: dz, z: -dx };
+  return { x: dx, z: dz };
+}
+
+function stampDisk(grid: Grid, draft: Draft, cx: number, cz: number, radius: number, sea: boolean): void {
+  const limit = radius * radius;
+  for (let z = cz - radius; z <= cz + radius; z++) {
+    for (let x = cx - radius; x <= cx + radius; x++) {
+      if (x < 0 || z < 0 || x >= WORLD_WIDTH || z >= WORLD_DEPTH) continue;
+      const dx = x - cx;
+      const dz = z - cz;
+      if (dx * dx + dz * dz > limit) continue;
+      const index = z * WORLD_WIDTH + x;
+      if (sea) {
+        if (grid.island[index] !== draft.id + 1) continue;
+        grid.island[index] = 0;
+        grid.surface[index] = 0;
+        grid.height[index] = 0;
+        continue;
+      }
+      if (grid.island[index] !== 0) continue;
+      grid.island[index] = draft.id + 1;
+      grid.surface[index] = GRASS;
+      grid.height[index] = 1;
+    }
+  }
+}
+
+/** Vnitřní záliv s ústím a dva krátké zářezy od okraje, které ostrov neroztnou. */
+function carveLagoon(grid: Grid, draft: Draft, state: RngState): RngState {
+  const facing = nextInt(state, 0, 3);
+  state = facing.state;
+  const ox = facing.value === 0 ? 1 : facing.value === 2 ? -1 : 0;
+  const oz = facing.value === 1 ? 1 : facing.value === 3 ? -1 : 0;
+  const inset = Math.floor(Math.min(draft.rx, draft.ry) * 0.18);
+  const px = draft.x + ox * inset;
+  const pz = draft.z + oz * inset;
+  const pool = Math.min(draft.rx, draft.ry) >= 12 ? 4 : 3;
+  stampDisk(grid, draft, px, pz, pool, true);
+  carveChannel(grid, draft, px, pz, ox, oz, pool, 3);
+  carveNotch(grid, draft, (facing.value + 1) % 4, 4);
+  carveNotch(grid, draft, (facing.value + 3) % 4, 4);
+  return state;
+}
+
+function carveNotch(grid: Grid, draft: Draft, facing: number, length: number): void {
+  const ox = facing === 0 ? 1 : facing === 2 ? -1 : 0;
+  const oz = facing === 1 ? 1 : facing === 3 ? -1 : 0;
+  let x = draft.x + ox * draft.rx;
+  let z = draft.z + oz * draft.ry;
+  for (let step = 0; step < length; step++) {
+    x -= ox;
+    z -= oz;
+    clearLand(grid, draft.id, x, z);
+  }
+}
+
+function carveChannel(grid: Grid, draft: Draft, x: number, z: number, ox: number, oz: number, skip: number, width: number): void {
+  const sideX = oz;
+  const sideZ = ox === 0 && oz === 0 ? 1 : -ox;
+  const limit = Math.max(draft.rx, draft.ry) + 8;
+  for (let step = 0; step < limit; step++) {
+    if (step >= skip) {
+      for (let extra = 0; extra < width; extra++) {
+        clearLand(grid, draft.id, x + sideX * extra, z + sideZ * extra);
+      }
+    }
+    x += ox;
+    z += oz;
+    if (x < 1 || z < 1 || x >= WORLD_WIDTH - 1 || z >= WORLD_DEPTH - 1) return;
+    if (step > skip + 2 && !channelOnLand(grid, draft.id, x, z, sideX, sideZ, width)) return;
+  }
+}
+
+function channelOnLand(grid: Grid, id: number, x: number, z: number, sideX: number, sideZ: number, width: number): boolean {
+  for (let extra = 0; extra < width; extra++) {
+    const nx = x + sideX * extra;
+    const nz = z + sideZ * extra;
+    if (nx < 0 || nz < 0 || nx >= WORLD_WIDTH || nz >= WORLD_DEPTH) continue;
+    if (grid.island[nz * WORLD_WIDTH + nx] === id + 1) return true;
+  }
+  return false;
+}
+
+function clearLand(grid: Grid, id: number, x: number, z: number): void {
+  if (x < 0 || z < 0 || x >= WORLD_WIDTH || z >= WORLD_DEPTH) return;
+  const index = z * WORLD_WIDTH + x;
+  if (grid.island[index] !== id + 1) return;
+  grid.island[index] = 0;
+  grid.surface[index] = 0;
+  grid.height[index] = 0;
+}
+
 function inBite(x: number, z: number, draft: Draft, bites: readonly { x: number; z: number; radius: number }[]): boolean {
   const dx = x - draft.x;
   const dz = z - draft.z;
@@ -406,28 +540,40 @@ function raiseIslands(grid: Grid, drafts: readonly Draft[], state: RngState): { 
     const relieved = stampRelief(grid, draft, state, coast);
     state = relieved;
   }
-  if (!repairHeights(grid)) return { state, ok: false, reason: "terasy porušují pravidla výšek" };
+  if (!repairHeights(grid)) return { state, ok: false, reason: "the terraces break the height rules" };
   fillSmallHoles(grid, 1);
   removeIsolated(grid);
-  if (!repairHeights(grid)) return { state, ok: false, reason: "terasy porušují pravidla výšek" };
+  if (!repairHeights(grid)) return { state, ok: false, reason: "the terraces break the height rules" };
   const painted = paintBeaches(grid, drafts, state);
   state = painted.state;
-  if (!painted.ok) return { state, ok: false, reason: "nepovedla se pláž" };
+  if (!painted.ok) return { state, ok: false, reason: "the beach failed" };
   for (const draft of drafts) {
     const box = measure(grid, draft.id);
-    if (!box) return { state, ok: false, reason: "ostrov zmizel při terasách" };
+    if (!box) return { state, ok: false, reason: "an island disappeared while terracing" };
     const long = box.w > box.h ? box.w : box.h;
-    if (long < 15 || box.area < 60) return { state, ok: false, reason: "ostrov se při terasách scvrkl" };
+    if (long < 15 || box.area < 60) return { state, ok: false, reason: "an island shrank while terracing" };
   }
   return { state, ok: true, reason: "" };
 }
 
 function paintBeaches(grid: Grid, drafts: readonly Draft[], state: RngState): { state: RngState; ok: boolean } {
+  let sand = 0;
+  for (const draft of drafts) {
+    if (draft.form !== "sand") continue;
+    for (let z = 0; z < WORLD_DEPTH; z++) {
+      for (let x = 0; x < WORLD_WIDTH; x++) {
+        const cell = z * WORLD_WIDTH + x;
+        if (grid.island[cell] !== draft.id + 1 || grid.surface[cell] === 0) continue;
+        if ((grid.height[cell] ?? 0) > 1) continue;
+        grid.surface[cell] = SAND;
+        sand += 1;
+      }
+    }
+  }
   const count = nextInt(state, 3, Math.min(8, drafts.length));
   state = count.state;
   const order = drafts.map((draft) => draft.id);
   state = shuffle(order, state);
-  let sand = 0;
   for (let index = 0; index < count.value; index++) {
     const id = order[index];
     if (id === undefined) continue;
@@ -438,6 +584,7 @@ function paintBeaches(grid: Grid, drafts: readonly Draft[], state: RngState): { 
         if ((grid.height[cell] ?? 0) > 1) continue;
         if (!touchesSea(grid, x, z)) continue;
         if (!gentle(grid, x, z, grid.height[cell] ?? 0)) continue;
+        if (grid.surface[cell] === SAND) continue;
         grid.surface[cell] = SAND;
         sand += 1;
       }
@@ -451,10 +598,10 @@ function placePads(grid: Grid, drafts: readonly Draft[], state: RngState): { sta
   state = extra.state;
   const coast = distances(grid);
   const base = drafts.find((draft) => draft.base);
-  if (!base) return { state, ok: false, reason: "chybí základna" };
+  if (!base) return { state, ok: false, reason: "the base is missing" };
   const baseRect = takeRect(grid, base.id, state, coast);
   state = baseRect.state;
-  if (!baseRect.rect) return { state, ok: false, reason: "základna nemá místo na heliport" };
+  if (!baseRect.rect) return { state, ok: false, reason: "the base has no room for a heliport" };
   let placed = 0;
   const others = drafts.filter((draft) => !draft.base);
   others.sort((a, b) => dist2(b.x, b.z, base.x, base.z) - dist2(a.x, a.z, base.x, base.z));
@@ -465,7 +612,7 @@ function placePads(grid: Grid, drafts: readonly Draft[], state: RngState): { sta
     if (!found.rect) continue;
     placed += 1;
   }
-  if (placed < 4) return { state, ok: false, reason: "nevešlo se dost heliportů" };
+  if (placed < 4) return { state, ok: false, reason: "not enough heliports fit" };
   return { state, ok: true, reason: "", baseX: baseRect.rect.x, baseZ: baseRect.rect.z };
 }
 
@@ -606,7 +753,7 @@ function placeHouses(grid: Grid, drafts: readonly Draft[], state: RngState): { s
   ] as const;
   for (const draft of drafts) {
     const box = measure(grid, draft.id);
-    if (!box) return { state, ok: false, reason: "ostrov zmizel před domy" };
+    if (!box) return { state, ok: false, reason: "an island disappeared before the houses" };
     let max = 1;
     if (box.area > 280) max = 2;
     if (box.area > 700) max = 3;
@@ -638,7 +785,7 @@ function placeHouses(grid: Grid, drafts: readonly Draft[], state: RngState): { s
         }
       }
     }
-    if (draft.base && placed === 0) return { state, ok: false, reason: "základna nemá dům" };
+    if (draft.base && placed === 0) return { state, ok: false, reason: "the base has no house" };
   }
   return { state, ok: true, reason: "" };
 }
@@ -900,14 +1047,30 @@ function countBays(grid: Grid): Map<number, number> {
     for (let x = 0; x < WORLD_WIDTH; x++) {
       const index = z * WORLD_WIDTH + x;
       if ((grid.island[index] ?? 0) !== 0) continue;
-      const neighbors = [z > 0 ? grid.island[index - WORLD_WIDTH] : 0, z + 1 < WORLD_DEPTH ? grid.island[index + WORLD_WIDTH] : 0, x > 0 ? grid.island[index - 1] : 0, x + 1 < WORLD_WIDTH ? grid.island[index + 1] : 0];
-      const tally = new Map<number, number>();
-      for (const code of neighbors) {
-        if (!code) continue;
-        tally.set(code, (tally.get(code) ?? 0) + 1);
+      const ortho = new Map<number, number>();
+      const around = new Map<number, number>();
+      const sides = [
+        [0, -1, true],
+        [0, 1, true],
+        [-1, 0, true],
+        [1, 0, true],
+        [-1, -1, false],
+        [1, -1, false],
+        [-1, 1, false],
+        [1, 1, false],
+      ] as const;
+      for (const [dx, dz, orthogonal] of sides) {
+        const nx = x + dx;
+        const nz = z + dz;
+        if (nx < 0 || nz < 0 || nx >= WORLD_WIDTH || nz >= WORLD_DEPTH) continue;
+        const code = grid.island[nz * WORLD_WIDTH + nx] ?? 0;
+        if (code === 0) continue;
+        around.set(code, (around.get(code) ?? 0) + 1);
+        if (orthogonal) ortho.set(code, (ortho.get(code) ?? 0) + 1);
       }
-      for (const [code, count] of tally) {
-        if (count < 3) continue;
+      for (const [code, count] of around) {
+        const enclosed = (ortho.get(code) ?? 0) >= 3 || (count >= 6 && (ortho.get(code) ?? 0) >= 2);
+        if (!enclosed) continue;
         const id = code - 1;
         bays.set(id, (bays.get(id) ?? 0) + 1);
       }
@@ -1022,6 +1185,34 @@ function edgeOfIsland(grid: Grid, x: number, z: number): boolean {
 function stampRelief(grid: Grid, draft: Draft, state: RngState, coast: Int16Array): RngState {
   const box = measure(grid, draft.id);
   if (!box) return state;
+  if (draft.form === "crescent") return state;
+  if (draft.form === "sand") {
+    for (let z = box.minZ; z <= box.maxZ; z++) {
+      for (let x = box.minX; x <= box.maxX; x++) {
+        const index = z * WORLD_WIDTH + x;
+        if (grid.island[index] !== draft.id + 1) continue;
+        grid.height[index] = 1;
+      }
+    }
+    const knob = nextInt(state, 0, 1);
+    state = knob.state;
+    if (knob.value === 1) {
+      const radius = 3;
+      for (let z = draft.z - radius; z <= draft.z + radius; z++) {
+        for (let x = draft.x - radius; x <= draft.x + radius; x++) {
+          if (x < 0 || z < 0 || x >= WORLD_WIDTH || z >= WORLD_DEPTH) continue;
+          const index = z * WORLD_WIDTH + x;
+          if (grid.island[index] !== draft.id + 1) continue;
+          if ((coast[index] ?? 0) < 3) continue;
+          const dx = x - draft.x;
+          const dz = z - draft.z;
+          const chebyshev = (dx < 0 ? -dx : dx) > (dz < 0 ? -dz : dz) ? (dx < 0 ? -dx : dx) : (dz < 0 ? -dz : dz);
+          if (chebyshev <= radius) grid.height[index] = 2;
+        }
+      }
+    }
+    return state;
+  }
   const facing = nextInt(state, 0, 7);
   state = facing.state;
   const crown = nextInt(state, 3, draft.base ? 5 : 4);

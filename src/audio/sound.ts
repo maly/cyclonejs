@@ -1,17 +1,41 @@
 import { MAX_SPEED } from "../sim/config.ts";
 import type { GameEvent, GameView } from "../sim/game.ts";
 
+const MUSIC_URL = new URL("../../Rotor Rave.mp3", import.meta.url).href;
+const VOLUME_KEY = "cyclone-remake.volume.v1";
+/** Stejná hlasitost, jakou měl mix před posuvníkem. */
+export const DEFAULT_VOLUME = 0.35;
+/** Skladba do hlavního výstupu. Posuvník pak mění hudbu i efekty najednou. */
+const MUSIC_TRIM = 0.5;
+
 export interface Soundscape {
   unlock(): void;
   toggle(): void;
+  volume(): number;
+  muted(): boolean;
+  setVolume(level: number): void;
   update(view: GameView, events: readonly GameEvent[]): void;
 }
 
+export function readVolume(raw: string | null): number {
+  if (raw === null) return DEFAULT_VOLUME;
+  const value = Number(raw);
+  if (!Number.isFinite(value)) return DEFAULT_VOLUME;
+  return Math.min(1, Math.max(0, value));
+}
+
 /** Syntéza ve Web Audio. První klávesa kontext odemkne. */
-export function createSoundscape(): Soundscape {
+export function createSoundscape(storage: Pick<Storage, "getItem" | "setItem"> | null = browserStorage()): Soundscape {
   let context: AudioContext | null = null;
   let master: GainNode | null = null;
   let muted = false;
+  let level = readStoredVolume(storage);
+  const music = new Audio(MUSIC_URL);
+  music.loop = true;
+  music.preload = "auto";
+  let musicGain: GainNode | null = null;
+  let wantMusic = false;
+  let musicWasOn = false;
   let rotorGain: GainNode | null = null;
   let chop: AudioBufferSourceNode | null = null;
   let body: OscillatorNode | null = null;
@@ -29,8 +53,13 @@ export function createSoundscape(): Soundscape {
     if (context) return;
     context = new AudioContext();
     master = context.createGain();
-    master.gain.value = 0.35;
+    master.gain.value = muted ? 0 : level;
     master.connect(context.destination);
+    const musicSource = context.createMediaElementSource(music);
+    musicGain = context.createGain();
+    musicGain.gain.value = 0;
+    musicSource.connect(musicGain);
+    musicGain.connect(master);
     const rotor = rotorVoice(context);
     rotorGain = rotor.output;
     chop = rotor.chop;
@@ -84,17 +113,56 @@ export function createSoundscape(): Soundscape {
     tone.stop(context.currentTime + duration);
   };
 
+  const applyLevel = () => {
+    if (!master || !context) return;
+    master.gain.setTargetAtTime(muted ? 0 : level, context.currentTime, 0.03);
+  };
+
+  const remember = () => {
+    try {
+      storage?.setItem(VOLUME_KEY, String(level));
+    } catch {
+      // Úložiště může chybět. Hlasitost pak platí jen do zavření stránky.
+    }
+  };
+
+  const armMusic = () => {
+    const started = music.play();
+    void started?.catch(() => undefined);
+  };
+
+  const syncMusic = () => {
+    if (!context || !musicGain) return;
+    const started = wantMusic && !musicWasOn;
+    if (started) music.currentTime = 0;
+    musicWasOn = wantMusic;
+    musicGain.gain.setTargetAtTime(wantMusic ? MUSIC_TRIM : 0, context.currentTime, 0.08);
+    if (started && music.paused) void music.play().catch(() => undefined);
+  };
+
   return {
     unlock() {
       ensure();
       if (context && context.state === "suspended") void context.resume();
+      if (music.paused) armMusic();
     },
     toggle() {
       ensure();
       muted = !muted;
-      if (master && context) master.gain.setTargetAtTime(muted ? 0 : 0.35, context.currentTime, 0.03);
+      applyLevel();
+    },
+    volume: () => level,
+    muted: () => muted,
+    setVolume(next) {
+      ensure();
+      level = Math.min(1, Math.max(0, next));
+      muted = false;
+      remember();
+      applyLevel();
     },
     update(view, events) {
+      wantMusic = view.phase === "play";
+      syncMusic();
       if (!context || !rotorGain || !chop || !body || !bodyTwin || !windGain || !winchGain || !refuelGain) return;
       const flying = view.phase === "play" && view.heli.mode !== "crash";
       const thrust = Math.min(1, view.heli.speed / MAX_SPEED);
@@ -152,6 +220,22 @@ export function createSoundscape(): Soundscape {
       }
     },
   };
+}
+
+function readStoredVolume(storage: Pick<Storage, "getItem"> | null): number {
+  try {
+    return readVolume(storage?.getItem(VOLUME_KEY) ?? null);
+  } catch {
+    return DEFAULT_VOLUME;
+  }
+}
+
+function browserStorage(): Pick<Storage, "getItem" | "setItem"> | null {
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
 }
 
 /** Dunění plus dva údery listů na otáčku. Obálka moduluje hlasitost, sama není tón. */

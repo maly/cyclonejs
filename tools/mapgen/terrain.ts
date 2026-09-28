@@ -355,7 +355,7 @@ function buildIsland(
         y: island.y + equation.row - 1 + aboveHeight,
         viewX: island.x + equation.col,
         viewR: island.y + equation.row,
-        message: `konflikt výšek: oblast ${equation.above} má ${aboveHeight}, rovnice žádá ${belowHeight + equation.k} (k=${equation.k})`,
+        message: `height conflict: region ${equation.above} has ${aboveHeight}, the equation wants ${belowHeight + equation.k} (k=${equation.k})`,
       });
     }
   }
@@ -518,7 +518,7 @@ function buildIsland(
             y: island.y + row + own,
             viewX: island.x + col,
             viewR: island.y + row,
-            message: `porušená nerovnost ${direction}: výška ${own}, soused ${neighborHeight}`,
+            message: `broken inequality ${direction}: height ${own}, neighbor ${neighborHeight}`,
           });
         }
       }
@@ -537,7 +537,7 @@ function buildIsland(
         y: cell.y,
         viewX: cell.x,
         viewR: cell.viewR,
-        message: `dvě plochy v půdorysu [${cell.x}, ${cell.y}] z řádků ${previous.viewR} a ${cell.viewR}`,
+        message: `two surfaces in plan [${cell.x}, ${cell.y}] from rows ${previous.viewR} and ${cell.viewR}`,
       });
       noteException(cell.x - island.x, cell.viewR - island.y, cell.top, "plocha");
       return;

@@ -5,205 +5,205 @@
       "type": "collision",
       "x": 42,
       "y": 393,
-      "message": "dvě plochy v půdorysu [42, 393] z řádků 389 a 390"
+      "message": "two surfaces in plan [42, 393] from rows 389 and 390"
     },
     {
       "type": "collision",
       "x": 55,
       "y": 393,
-      "message": "dvě plochy v půdorysu [55, 393] z řádků 389 a 390"
+      "message": "two surfaces in plan [55, 393] from rows 389 and 390"
     },
     {
       "type": "collision",
       "x": 441,
       "y": 408,
-      "message": "dvě plochy v půdorysu [441, 408] z řádků 403 a 406"
+      "message": "two surfaces in plan [441, 408] from rows 403 and 406"
     },
     {
       "type": "collision",
       "x": 442,
       "y": 408,
-      "message": "dvě plochy v půdorysu [442, 408] z řádků 403 a 406"
+      "message": "two surfaces in plan [442, 408] from rows 403 and 406"
     },
     {
       "type": "collision",
       "x": 441,
       "y": 409,
-      "message": "dvě plochy v půdorysu [441, 409] z řádků 404 a 407"
+      "message": "two surfaces in plan [441, 409] from rows 404 and 407"
     },
     {
       "type": "collision",
       "x": 442,
       "y": 409,
-      "message": "dvě plochy v půdorysu [442, 409] z řádků 404 a 407"
+      "message": "two surfaces in plan [442, 409] from rows 404 and 407"
     },
     {
       "type": "conflict",
       "x": 266,
       "y": 52,
-      "message": "konflikt výšek: oblast 3 má 3, rovnice žádá 5 (k=3)"
+      "message": "height conflict: region 3 has 3, the equation wants 5 (k=3)"
     },
     {
       "type": "conflict",
       "x": 335,
       "y": 118,
-      "message": "konflikt výšek: oblast 2 má 2, rovnice žádá 4 (k=1)"
+      "message": "height conflict: region 2 has 2, the equation wants 4 (k=1)"
     },
     {
       "type": "conflict",
       "x": 360,
       "y": 121,
-      "message": "konflikt výšek: oblast 0 má 4, rovnice žádá 7 (k=4)"
+      "message": "height conflict: region 0 has 4, the equation wants 7 (k=4)"
     },
     {
       "type": "conflict",
       "x": 361,
       "y": 121,
-      "message": "konflikt výšek: oblast 0 má 4, rovnice žádá 7 (k=4)"
+      "message": "height conflict: region 0 has 4, the equation wants 7 (k=4)"
     },
     {
       "type": "conflict",
       "x": 358,
       "y": 122,
-      "message": "konflikt výšek: oblast 0 má 4, rovnice žádá 6 (k=3)"
+      "message": "height conflict: region 0 has 4, the equation wants 6 (k=3)"
     },
     {
       "type": "conflict",
       "x": 359,
       "y": 122,
-      "message": "konflikt výšek: oblast 0 má 4, rovnice žádá 6 (k=3)"
+      "message": "height conflict: region 0 has 4, the equation wants 6 (k=3)"
     },
     {
       "type": "conflict",
       "x": 143,
       "y": 153,
-      "message": "konflikt výšek: oblast 7 má 2, rovnice žádá 4 (k=2)"
+      "message": "height conflict: region 7 has 2, the equation wants 4 (k=2)"
     },
     {
       "type": "conflict",
       "x": 144,
       "y": 153,
-      "message": "konflikt výšek: oblast 7 má 2, rovnice žádá 3 (k=1)"
+      "message": "height conflict: region 7 has 2, the equation wants 3 (k=1)"
     },
     {
       "type": "conflict",
       "x": 113,
       "y": 161,
-      "message": "konflikt výšek: oblast 1 má 2, rovnice žádá 3 (k=1)"
+      "message": "height conflict: region 1 has 2, the equation wants 3 (k=1)"
     },
     {
       "type": "conflict",
       "x": 114,
       "y": 161,
-      "message": "konflikt výšek: oblast 1 má 2, rovnice žádá 3 (k=1)"
+      "message": "height conflict: region 1 has 2, the equation wants 3 (k=1)"
     },
     {
       "type": "conflict",
       "x": 392,
       "y": 245,
-      "message": "konflikt výšek: oblast 3 má 3, rovnice žádá 6 (k=3)"
+      "message": "height conflict: region 3 has 3, the equation wants 6 (k=3)"
     },
     {
       "type": "conflict",
       "x": 441,
       "y": 409,
-      "message": "konflikt výšek: oblast 3 má 5, rovnice žádá 3 (k=1)"
+      "message": "height conflict: region 3 has 5, the equation wants 3 (k=1)"
     },
     {
       "type": "conflict",
       "x": 442,
       "y": 409,
-      "message": "konflikt výšek: oblast 3 má 5, rovnice žádá 3 (k=1)"
+      "message": "height conflict: region 3 has 5, the equation wants 3 (k=1)"
     },
     {
       "type": "conflict",
       "x": 75,
       "y": 414,
-      "message": "konflikt výšek: oblast 14 má 1, rovnice žádá 3 (k=1)"
+      "message": "height conflict: region 14 has 1, the equation wants 3 (k=1)"
     },
     {
       "type": "conflict",
       "x": 76,
       "y": 414,
-      "message": "konflikt výšek: oblast 14 má 1, rovnice žádá 3 (k=1)"
+      "message": "height conflict: region 14 has 1, the equation wants 3 (k=1)"
     },
     {
       "type": "conflict",
       "x": 368,
       "y": 547,
-      "message": "konflikt výšek: oblast 1 má 2, rovnice žádá 4 (k=2)"
+      "message": "height conflict: region 1 has 2, the equation wants 4 (k=2)"
     },
     {
       "type": "conflict",
       "x": 369,
       "y": 547,
-      "message": "konflikt výšek: oblast 1 má 2, rovnice žádá 4 (k=2)"
+      "message": "height conflict: region 1 has 2, the equation wants 4 (k=2)"
     },
     {
       "type": "violation",
       "x": 533,
       "y": 54,
-      "message": "porušená nerovnost E: výška 2, soused 7"
+      "message": "broken inequality E: height 2, neighbor 7"
     },
     {
       "type": "violation",
       "x": 280,
       "y": 310,
-      "message": "porušená nerovnost W: výška 2, soused 3"
+      "message": "broken inequality W: height 2, neighbor 3"
     },
     {
       "type": "violation",
       "x": 280,
       "y": 311,
-      "message": "porušená nerovnost W: výška 2, soused 3"
+      "message": "broken inequality W: height 2, neighbor 3"
     },
     {
       "type": "violation",
       "x": 323,
       "y": 311,
-      "message": "porušená nerovnost N: výška 4, soused 6"
+      "message": "broken inequality N: height 4, neighbor 6"
     },
     {
       "type": "violation",
       "x": 311,
       "y": 312,
-      "message": "porušená nerovnost W: výška 2, soused 3"
+      "message": "broken inequality W: height 2, neighbor 3"
     },
     {
       "type": "violation",
       "x": 299,
       "y": 315,
-      "message": "porušená nerovnost N: výška 3, soused 3"
+      "message": "broken inequality N: height 3, neighbor 3"
     },
     {
       "type": "violation",
       "x": 43,
       "y": 393,
-      "message": "porušená nerovnost N: výška 4, soused 4"
+      "message": "broken inequality N: height 4, neighbor 4"
     },
     {
       "type": "violation",
       "x": 43,
       "y": 393,
-      "message": "porušená nerovnost W: výška 4, soused 4"
+      "message": "broken inequality W: height 4, neighbor 4"
     },
     {
       "type": "violation",
       "x": 54,
       "y": 393,
-      "message": "porušená nerovnost E: výška 4, soused 4"
+      "message": "broken inequality E: height 4, neighbor 4"
     },
     {
       "type": "violation",
       "x": 72,
       "y": 422,
-      "message": "porušená nerovnost N: výška 4, soused 4"
+      "message": "broken inequality N: height 4, neighbor 4"
     },
     {
       "type": "violation",
       "x": 31,
       "y": 519,
-      "message": "porušená nerovnost W: výška 1, soused 2"
+      "message": "broken inequality W: height 1, neighbor 2"
     }
   ]
 }

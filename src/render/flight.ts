@@ -171,7 +171,7 @@ export function startFlight(root: HTMLElement, world: World, debug: boolean): Fl
     free = !free;
     controls.enabled = free;
     const button = hud.readouts().freeButton;
-    if (button) button.textContent = free ? "Sledovat vrtulník" : "Volná kamera";
+    if (button) button.textContent = free ? "Follow the helicopter" : "Free camera";
     if (free && shown.current) {
       freeCamera.position.copy(camera.position);
       controls.target.set(shown.current.x, shown.current.y, shown.current.z);
@@ -273,10 +273,10 @@ export function startFlight(root: HTMLElement, world: World, debug: boolean): Fl
         const cellX = Math.floor(state.x);
         const cellZ = Math.floor(state.z);
         debugReadout.textContent = [
-          `${fps.toFixed(0)} FPS · ${frame.phase}${frame.paused ? " · pauza" : ""} · ${state.mode}`,
-          `buňka ${cellX}, ${cellZ}`,
-          `poloha ${state.x.toFixed(1)}, ${state.z.toFixed(1)}`,
-          `výška ${state.y.toFixed(1)} · palivo ${frame.fuel.toFixed(0)}`,
+          `${fps.toFixed(0)} FPS · ${frame.phase}${frame.paused ? " · paused" : ""} · ${state.mode}`,
+          `cell ${cellX}, ${cellZ}`,
+          `position ${state.x.toFixed(1)}, ${state.z.toFixed(1)}`,
+          `altitude ${state.y.toFixed(1)} · fuel ${frame.fuel.toFixed(0)}`,
         ].join("\n");
       }
       renderer.render(scene, free ? freeCamera : camera);

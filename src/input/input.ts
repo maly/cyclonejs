@@ -8,6 +8,7 @@ export function createInput(target: Window = window, debug = false): { sample: (
   let viewEdge = false;
   let confirmEdge = false;
   let pauseEdge = false;
+  let quitEdge = false;
   let mapEdge = false;
   let muteEdge = false;
   let godEdge = false;
@@ -31,6 +32,7 @@ export function createInput(target: Window = window, debug = false): { sample: (
     if (debug && event.code === "KeyL") reseedEdge = true;
     if (event.code === "Space") confirmEdge = true;
     if (event.code === "Escape") pauseEdge = true;
+    if (event.code === "KeyQ") quitEdge = true;
     held.add(event.code);
     if (isFlightCode(event.code)) event.preventDefault();
   };
@@ -46,6 +48,7 @@ export function createInput(target: Window = window, debug = false): { sample: (
       const toggleView = viewEdge || (pad.x && !padWasX);
       const confirm = confirmEdge;
       const pause = pauseEdge;
+      const quit = quitEdge;
       const toggleMap = mapEdge;
       const toggleMute = muteEdge;
       const god = godEdge;
@@ -57,6 +60,7 @@ export function createInput(target: Window = window, debug = false): { sample: (
       viewEdge = false;
       confirmEdge = false;
       pauseEdge = false;
+      quitEdge = false;
       mapEdge = false;
       muteEdge = false;
       godEdge = false;
@@ -74,7 +78,7 @@ export function createInput(target: Window = window, debug = false): { sample: (
         forward: held.has("Space") || pad.forward,
         toggleView,
       };
-      return { flight, confirm, pause, toggleMap, toggleMute, god, fillFuel, teleport, skipMinute, toggleLayout, reseed };
+      return { flight, confirm, pause, quit, toggleMap, toggleMute, god, fillFuel, teleport, skipMinute, toggleLayout, reseed };
     },
   };
 }

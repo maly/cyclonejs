@@ -25,6 +25,8 @@ export interface GameCommand {
   confirm: boolean;
   /** Escape. Během hry pozastaví a znovu spustí. */
   pause: boolean;
+  /** Klávesa Q. Na pauze vrací do menu. Ve hře je zároveň stoupání. */
+  quit: boolean;
   /** Klávesa M. Mapa běží mimo simulaci. */
   toggleMap: boolean;
   /** Klávesa S. Zvuk běží mimo simulaci. */
@@ -44,6 +46,7 @@ export const IDLE_GAME: GameCommand = {
   flight: IDLE_COMMAND,
   confirm: false,
   pause: false,
+  quit: false,
   toggleMap: false,
   toggleMute: false,
   god: false,

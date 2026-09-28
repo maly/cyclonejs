@@ -51,33 +51,85 @@ interface Chain {
 
 const CHAIN = train(ISLAND_CORPUS);
 
-/** Jména ostrovů. Základna je vždy Base Island. Každé slovo jen jednou. */
+/** Jména ostrovů. Základna je vždy Base Island. Skupina Isles nebo Rocks má jedno společné jméno. Každé slovo jen jednou. */
 export function nameIslands(state: RngState, islands: readonly IslandProfile[]): { state: RngState; names: string[] } {
   const names: string[] = [];
   const used = new Set<string>(["base"]);
   const endings = assignEndings(islands);
   state = finishEndings(state, islands, endings);
-  const classes = new Map<number, number>();
   const ordered = islands.slice().sort((a, b) => a.id - b.id);
-  for (const island of ordered) {
-    if (island.base) continue;
+  const grouped = new Set<number>();
+  const bundles = groupBundles(ordered, endings);
+  for (const bundle of bundles) {
     const roll = nextInt(state, 0, 99);
     state = roll.state;
-    classes.set(island.id, roll.value);
+    const picked = pickWord(state, groupProfile(bundle.members), roll.value, used);
+    state = picked.state;
+    used.add(picked.word.toLowerCase());
+    const title = `${picked.word} ${bundle.ending}`;
+    for (const island of bundle.members) {
+      names[island.id] = title;
+      grouped.add(island.id);
+    }
   }
   for (const island of ordered) {
-    if (island.base) {
-      names[island.id] = "Base Island";
-      continue;
-    }
+    if (island.base || grouped.has(island.id)) continue;
+    const roll = nextInt(state, 0, 99);
+    state = roll.state;
     const ending = endings.get(island.id) ?? "Island";
-    const kind = classes.get(island.id) ?? 0;
-    const picked = pickWord(state, island, kind, used);
+    const picked = pickWord(state, island, roll.value, used);
     state = picked.state;
     used.add(picked.word.toLowerCase());
     names[island.id] = `${picked.word} ${ending}`;
   }
+  for (const island of ordered) {
+    if (island.base) names[island.id] = "Base Island";
+  }
   return { state, names };
+}
+
+function groupBundles(islands: readonly IslandProfile[], endings: Map<number, Ending>): { ending: Ending; members: IslandProfile[] }[] {
+  const bundles: { ending: Ending; members: IslandProfile[] }[] = [];
+  for (const ending of ["Rocks", "Isles"] as const) {
+    const members = islands.filter((island) => endings.get(island.id) === ending);
+    if (members.length >= 2) bundles.push({ ending, members });
+  }
+  return bundles;
+}
+
+function groupProfile(members: readonly IslandProfile[]): IslandProfile {
+  let area = 0;
+  let sand = 0;
+  let trees = 0;
+  let houses = 0;
+  let bays = 0;
+  let maxHeight = 1;
+  let hullRatio = 1;
+  let aspect = 1;
+  for (const island of members) {
+    area += island.area;
+    sand += island.sandRatio * island.area;
+    trees += island.treeDensity * island.area;
+    houses += island.houses;
+    bays += island.bays;
+    if (island.maxHeight > maxHeight) maxHeight = island.maxHeight;
+    if (island.hullRatio < hullRatio) hullRatio = island.hullRatio;
+    if (island.aspect > aspect) aspect = island.aspect;
+  }
+  const first = members[0];
+  return {
+    id: first?.id ?? 0,
+    cluster: first?.cluster ?? 0,
+    base: false,
+    area,
+    aspect,
+    hullRatio,
+    bays,
+    maxHeight,
+    sandRatio: area > 0 ? sand / area : 0,
+    treeDensity: area > 0 ? trees / area : 0,
+    houses,
+  };
 }
 
 function assignEndings(islands: readonly IslandProfile[]): Map<number, Ending> {

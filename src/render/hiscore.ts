@@ -130,7 +130,7 @@ export function createHiscoreUi(store: HiscoreStore = browserHiscoreStore()): Hi
   function paintName(): void {
     if (!endName) return;
     endName.hidden = false;
-    endName.innerHTML = `<p>Jméno do tabulky</p><p class="name-entry"><b>${escapeHtml(draft)}</b><span class="caret"></span></p><p class="screen-action">Enter potvrdí</p>`;
+    endName.innerHTML = `<p>Name for the table</p><p class="name-entry"><b>${escapeHtml(draft)}</b><span class="caret"></span></p><p class="screen-action">Enter confirms</p>`;
   }
 
   function paintBoard(host: HTMLElement | null, marked: number): void {
@@ -180,25 +180,25 @@ export function createHiscoreUi(store: HiscoreStore = browserHiscoreStore()): Hi
 function boardHtml(table: HiscoreTable, marked: number): string {
   const rows =
     table.records.length === 0
-      ? `<tr><td colspan="6">Žádné záznamy</td></tr>`
+      ? `<tr><td colspan="6">No records</td></tr>`
       : table.records
           .map((record, index) => {
             const fresh = index === marked ? " class=\"fresh\"" : "";
             return `<tr${fresh}><td>${index + 1}</td><td>${escapeHtml(record.name)}</td><td>${record.score}</td><td>${record.crates}</td><td>${escapeHtml(formatDate(record.at))}</td><td>${escapeHtml(mapLabel(record.map))}</td></tr>`;
           })
           .join("");
-  return `<h1>Rekordy</h1><table class="hiscore-table"><thead><tr><th>#</th><th>jméno</th><th>skóre</th><th>bedny</th><th>datum</th><th>mapa</th></tr></thead><tbody>${rows}</tbody></table>`;
+  return `<h1>Records</h1><table class="hiscore-table"><thead><tr><th>#</th><th>name</th><th>score</th><th>crates</th><th>date</th><th>map</th></tr></thead><tbody>${rows}</tbody></table>`;
 }
 
 function mapLabel(map: string | null): string {
-  if (map === null) return "orig";
+  if (map === null) return "original";
   return map.length > 12 ? `${map.slice(0, 10)}…` : map;
 }
 
 function formatDate(at: string): string {
   const time = Date.parse(at);
   if (!Number.isFinite(time)) return at;
-  return new Date(time).toLocaleDateString("cs-CZ");
+  return new Date(time).toLocaleDateString("en-GB");
 }
 
 function escapeHtml(text: string): string {

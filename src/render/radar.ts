@@ -67,7 +67,7 @@ export function createRadar(root: HTMLElement, world: World, pads: readonly Heli
       context.putImageData(overlayImage ?? islands, 0, 0);
       if (debug) {
         caption.hidden = false;
-        caption.textContent = `seed ${view.seed >>> 0} · kroužek je bedna, červený z jihu zakrytá, modrý ze severu`;
+        caption.textContent = `seed ${view.seed >>> 0} · a circle is a crate, red is hidden from the south, blue from the north`;
       }
       context.fillStyle = "#f4f1e4";
       for (const pad of pads) {
@@ -110,24 +110,24 @@ export function createRadar(root: HTMLElement, world: World, pads: readonly Heli
 
 function islandLabels(world: World): { name: string; x: number; z: number }[] {
   if (!world.island || !world.islandNames) return [];
-  const sumX = new Map<number, number>();
-  const sumZ = new Map<number, number>();
-  const count = new Map<number, number>();
+  const sumX = new Map<string, number>();
+  const sumZ = new Map<string, number>();
+  const count = new Map<string, number>();
   for (let z = 0; z < world.depth; z++) {
     for (let x = 0; x < world.width; x++) {
       const code = world.island[z * world.width + x] ?? 0;
       if (code === 0) continue;
-      const id = code - 1;
-      sumX.set(id, (sumX.get(id) ?? 0) + x);
-      sumZ.set(id, (sumZ.get(id) ?? 0) + z);
-      count.set(id, (count.get(id) ?? 0) + 1);
+      const name = world.islandNames[code - 1];
+      if (!name) continue;
+      sumX.set(name, (sumX.get(name) ?? 0) + x);
+      sumZ.set(name, (sumZ.get(name) ?? 0) + z);
+      count.set(name, (count.get(name) ?? 0) + 1);
     }
   }
   const labels: { name: string; x: number; z: number }[] = [];
-  for (const [id, cells] of count) {
-    const name = world.islandNames[id];
-    if (!name || !cells) continue;
-    labels.push({ name, x: (sumX.get(id) ?? 0) / cells, z: (sumZ.get(id) ?? 0) / cells });
+  for (const [name, cells] of count) {
+    if (!cells) continue;
+    labels.push({ name, x: (sumX.get(name) ?? 0) / cells, z: (sumZ.get(name) ?? 0) / cells });
   }
   return labels;
 }

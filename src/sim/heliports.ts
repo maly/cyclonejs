@@ -84,7 +84,7 @@ export function heliportIdAt(world: World, mask: Uint16Array, x: number, z: numb
 
 export function formatHeliport(pad: Heliport): string {
   const size = `${pad.x},${pad.z} ${pad.w}×${pad.h}`;
-  return pad.base ? `${size} základna` : size;
+  return pad.base ? `${size} base` : size;
 }
 
 function push(seen: Uint8Array, surface: Uint8Array, stack: number[], index: number): void {

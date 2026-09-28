@@ -21,20 +21,20 @@ export function assessWorld(world: World): ProcgenReport {
   const islands = countIslands(world);
   const pads = findHeliports(world, world.baseX ?? BASE_CELL_X, world.baseZ ?? BASE_CELL_Z);
   const houses = countHouses(world);
-  if (islands < 12 || islands > 18) reasons.push(`ostrovů je ${islands}, má jich být 12 až 18`);
-  if (!pads.list.some((pad) => pad.base)) reasons.push("chybí základna");
-  if (pads.list.length < 5 || pads.list.length > 7) reasons.push(`heliportů je ${pads.list.length}, má jich být 5 až 7`);
+  if (islands < 12 || islands > 18) reasons.push(`island count is ${islands}, expected 12 to 18`);
+  if (!pads.list.some((pad) => pad.base)) reasons.push("the base is missing");
+  if (pads.list.length < 5 || pads.list.length > 7) reasons.push(`heliport count is ${pads.list.length}, expected 5 to 7`);
   for (const pad of pads.list) {
     const wide = (pad.w === 4 && pad.h === 3) || (pad.w === 3 && pad.h === 4);
-    if (!wide) reasons.push(`heliport ${pad.x},${pad.z} nemá půdorys 4×3`);
-    if (!padFlat(world, pad.x, pad.z, pad.w, pad.h)) reasons.push(`heliport ${pad.x},${pad.z} není rovný`);
+    if (!wide) reasons.push(`heliport ${pad.x},${pad.z} is not a 4×3 pad`);
+    if (!padFlat(world, pad.x, pad.z, pad.w, pad.h)) reasons.push(`heliport ${pad.x},${pad.z} is not flat`);
   }
   const heightReason = heightFault(world);
   if (heightReason) reasons.push(heightReason);
-  if (!beachesOk(world)) reasons.push("chybí písečná pláž bez útesu");
-  if (!fuelOk(world, pads.list)) reasons.push("ostrov je dál než 35 % doletu od heliportu");
-  if (!padsConnected(pads.list)) reasons.push("ze základny se nedá po heliportech doletět všude");
-  if (!namesOk(world, islands)) reasons.push("ostrovu chybí jméno");
+  if (!beachesOk(world)) reasons.push("a sandy beach without a cliff is missing");
+  if (!fuelOk(world, pads.list)) reasons.push("an island is farther than 35% of the range from a heliport");
+  if (!padsConnected(pads.list)) reasons.push("not every island is reachable from the base by heliport");
+  if (!namesOk(world, islands)) reasons.push("an island has no name");
   const placed = placementFault(world, pads.list);
   if (placed) reasons.push(placed);
   return {
@@ -104,12 +104,12 @@ function heightFault(world: World): string | null {
       const height = world.height[index] ?? 0;
       const pillar = isPillarCell(world, x, z);
       if (pillar) {
-        if (height < 6 || height > 7) return `sloup ${x},${z} má výšku ${height}`;
+        if (height < 6 || height > 7) return `pillar ${x},${z} has height ${height}`;
       } else if (height > 6) {
-        return `buňka ${x},${z} má výšku ${height}`;
+        return `cell ${x},${z} has height ${height}`;
       }
-      if (slope(world, x, z, height)) return `buňka ${x},${z} má příliš vysoký schod`;
-      if (!pillar && thin(world, x, z, height)) return `terasa na ${x},${z} je užší než dvě buňky`;
+      if (slope(world, x, z, height)) return `cell ${x},${z} has too high a step`;
+      if (!pillar && thin(world, x, z, height)) return `the terrace at ${x},${z} is narrower than two cells`;
     }
   }
   return null;
@@ -241,23 +241,23 @@ function namesOk(world: World, islands: number): boolean {
 }
 
 function placementFault(world: World, pads: readonly { x: number; z: number; w: number; h: number }[]): string | null {
-  if (world.crates.length !== CRATE_COUNT) return "rozmístění beden se nepovedlo";
+  if (world.crates.length !== CRATE_COUNT) return "crate placement failed";
   const islands = new Set<number>();
   let covers = 0;
   const trees = new Set(world.trees.map((tree) => tree.z * world.width + tree.x));
   for (let index = 0; index < world.crates.length; index++) {
     const crate = world.crates[index];
-    if (!crate) return "rozmístění beden se nepovedlo";
+    if (!crate) return "crate placement failed";
     const island = islandIdAt(world, crate.x, crate.z);
-    if (island === null || island === BASE_ISLAND || islands.has(island)) return "bedna neleží na volném ostrově";
+    if (island === null || island === BASE_ISLAND || islands.has(island)) return "a crate is not on a free island";
     islands.add(island);
-    if (!walkable(world, crate.x, crate.z, trees)) return "bedna nestojí na volné zemi";
+    if (!walkable(world, crate.x, crate.z, trees)) return "a crate is not on open ground";
     for (let other = 0; other < index; other++) {
       const previous = world.crates[other];
       if (!previous) continue;
       const dx = crate.x - previous.x;
       const dz = crate.z - previous.z;
-      if (dx * dx + dz * dz < CRATE_MIN_DISTANCE * CRATE_MIN_DISTANCE) return "bedny jsou příliš blízko";
+      if (dx * dx + dz * dz < CRATE_MIN_DISTANCE * CRATE_MIN_DISTANCE) return "the crates are too close";
     }
     let best = Infinity;
     for (const pad of pads) {
@@ -265,35 +265,35 @@ function placementFault(world: World, pads: readonly { x: number; z: number; w: 
       if (distance < best) best = distance;
     }
     const limit = fullThrottleRange() * 0.4;
-    if (best > limit * limit) return "bedna je dál než 40 % doletu";
+    if (best > limit * limit) return "a crate is farther than 40% of the range";
     const south = coveredFromSouth(world, crate.x, crate.z);
     const north = coveredFromNorth(world, crate.x, crate.z);
-    if (south && north) return "bedna je zakrytá z obou stran";
+    if (south && north) return "a crate is hidden from both sides";
     if (south !== north) covers += 1;
   }
-  if (covers < 2) return "chybí bedny zakryté z jednoho pohledu";
-  if (world.people.length < PERSON_MIN || world.people.length > PERSON_MAX) return "rozmístění lidí se nepovedlo";
+  if (covers < 2) return "crates hidden from one view are missing";
+  if (world.people.length < PERSON_MIN || world.people.length > PERSON_MAX) return "people placement failed";
   const perIsland = new Map<number, number>();
   for (let index = 0; index < world.people.length; index++) {
     const person = world.people[index];
-    if (!person) return "rozmístění lidí se nepovedlo";
+    if (!person) return "people placement failed";
     const island = islandIdAt(world, person.x, person.z);
-    if (island === null || island === BASE_ISLAND) return "člověk je na základně nebo v moři";
-    if (!walkable(world, person.x, person.z, trees)) return "člověk nestojí na volné zemi";
+    if (island === null || island === BASE_ISLAND) return "a person is at the base or in the sea";
+    if (!walkable(world, person.x, person.z, trees)) return "a person is not on open ground";
     const used = (perIsland.get(island) ?? 0) + 1;
-    if (used > PERSON_PER_ISLAND) return "na ostrově je příliš lidí";
+    if (used > PERSON_PER_ISLAND) return "an island has too many people";
     perIsland.set(island, used);
     for (const crate of world.crates) {
       const dx = person.x - crate.x;
       const dz = person.z - crate.z;
-      if (dx * dx + dz * dz < PERSON_CRATE_DISTANCE * PERSON_CRATE_DISTANCE) return "člověk je příliš blízko bedny";
+      if (dx * dx + dz * dz < PERSON_CRATE_DISTANCE * PERSON_CRATE_DISTANCE) return "a person is too close to a crate";
     }
     for (let other = 0; other < index; other++) {
       const previous = world.people[other];
       if (!previous) continue;
       const dx = person.x - previous.x;
       const dz = person.z - previous.z;
-      if (dx * dx + dz * dz < PERSON_MIN_DISTANCE * PERSON_MIN_DISTANCE) return "lidé stojí příliš blízko";
+      if (dx * dx + dz * dz < PERSON_MIN_DISTANCE * PERSON_MIN_DISTANCE) return "people are standing too close";
     }
   }
   return null;

@@ -1,5 +1,5 @@
 /** Verze výstupu. Zvednout při každé změně, která pro stejné číslo dá jiný svět. */
-export const GENERATOR_VERSION = 4;
+export const GENERATOR_VERSION = 5;
 
 export const MAX_ATTEMPTS = 20;
 
@@ -16,7 +16,7 @@ export interface RngState {
  * Nula je jedno slovo 0, takže se liší od jedničky.
  */
 export function generatorState(seed: bigint): RngState {
-  if (seed < 0n) throw new Error("Číslo mapy musí být nezáporné.");
+  if (seed < 0n) throw new Error("The map number must not be negative.");
   const words: number[] = [];
   let rest = seed;
   do {

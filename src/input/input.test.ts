@@ -21,7 +21,10 @@ describe("klávesy", () => {
   it("stoupá na Q a šipku nahoru, klesá na A a šipku dolů", () => {
     const { input, press } = keyboard();
     press("KeyQ", "keydown");
-    expect(input.sample().flight.climb).toBe(true);
+    const climbed = input.sample();
+    expect(climbed.flight.climb).toBe(true);
+    expect(climbed.quit).toBe(true);
+    expect(input.sample().quit).toBe(false);
     press("KeyQ", "keyup");
     press("ArrowUp", "keydown");
     expect(input.sample().flight.climb).toBe(true);

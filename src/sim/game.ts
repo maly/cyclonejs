@@ -417,7 +417,7 @@ export function toView(state: GameState, world: World, events: readonly GameEven
           warning: planeWarning(state.plane),
         }
       : null,
-    planeAlert: state.plane && planeWarning(state.plane) ? "LETADLO" : null,
+    planeAlert: state.plane && planeWarning(state.plane) ? "AIRCRAFT" : null,
     refueling:
       state.phase === "play" &&
       state.heli.mode === "ground" &&

@@ -66,7 +66,7 @@ describe("heliporty", () => {
     expect(pads.list).toHaveLength(1);
     expect(pads.list[0]).toMatchObject({ x: 10, z: 10, w: 4, h: 3, base: true });
     expect(pads.mask[24 * world.width + 24]).toBe(0);
-    expect(formatHeliport(pads.list[0])).toBe("10,10 4×3 základna");
+    expect(formatHeliport(pads.list[0])).toBe("10,10 4×3 base");
   });
 
   it("na mapě je základna kolem buňky 270, 309 a vrtulník na ní stojí", () => {

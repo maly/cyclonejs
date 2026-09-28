@@ -50,15 +50,15 @@ export function startViewer(root: HTMLElement, world: World, issues: PlanIssue[]
   const panel = document.createElement("div");
   panel.className = "panel";
   panel.innerHTML = `
-    <h1>Cyclone, terén</h1>
-    <p>Volná kamera. Tažením se rozhlížíš, kolečkem přibližuješ.</p>
+    <h1>Cyclone, terrain</h1>
+    <p>Free camera. Drag to look around, scroll to zoom.</p>
     <div class="row">
-      <button type="button" id="view-world">Celá mapa</button>
-      <button type="button" id="view-base">Základna</button>
+      <button type="button" id="view-world">Whole map</button>
+      <button type="button" id="view-base">Base</button>
     </div>
-    <label><input type="checkbox" id="show-estimated" /> Odhadované buňky</label>
-    <label><input type="checkbox" id="show-issues" /> Problémová místa</label>
-    <p id="cell-info">Klikni na buňku.</p>
+    <label><input type="checkbox" id="show-estimated" /> Estimated cells</label>
+    <label><input type="checkbox" id="show-issues" /> Problem spots</label>
+    <p id="cell-info">Click a cell.</p>
   `;
   root.appendChild(panel);
   panel.querySelector("#view-world")?.addEventListener("click", () => showWorld(camera, controls, world));
@@ -115,12 +115,12 @@ function showBase(camera: PerspectiveCamera, controls: OrbitControls) {
 
 export function describeCell(world: World, issues: PlanIssue[], x: number, z: number): string {
   const here = issues.filter((issue) => issue.x === x && issue.y === z);
-  const problem = here.length ? here.map((issue) => `${issue.type}: ${issue.message}`).join("\n") : "žádný";
+  const problem = here.length ? here.map((issue) => `${issue.type}: ${issue.message}`).join("\n") : "none";
   return [
-    `Buňka ${x}, ${z}`,
-    `Výška ${heightAt(world, x + 0.5, z + 0.5)}`,
-    `Povrch ${SURFACE_NAME[surfaceAt(world, x + 0.5, z + 0.5)] ?? "neznámý"}`,
-    `Odhad ${estimatedAt(world, x + 0.5, z + 0.5) ? "ano" : "ne"}`,
-    `Problém: ${problem}`,
+    `Cell ${x}, ${z}`,
+    `Height ${heightAt(world, x + 0.5, z + 0.5)}`,
+    `Surface ${SURFACE_NAME[surfaceAt(world, x + 0.5, z + 0.5)] ?? "unknown"}`,
+    `Estimated ${estimatedAt(world, x + 0.5, z + 0.5) ? "yes" : "no"}`,
+    `Problem: ${problem}`,
   ].join("\n");
 }

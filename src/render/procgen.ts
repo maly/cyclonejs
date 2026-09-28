@@ -19,10 +19,10 @@ export function startProcgen(root: HTMLElement): void {
   root.innerHTML = `
     <div class="procgen">
       <form id="procgen-form" class="procgen-bar">
-        <button type="button" id="procgen-prev">předchozí</button>
-        <label>Číslo <input id="procgen-seed" autocomplete="off" spellcheck="false" /></label>
-        <button type="submit">zobrazit</button>
-        <button type="button" id="procgen-next">další</button>
+        <button type="button" id="procgen-prev">previous</button>
+        <label>Number <input id="procgen-seed" autocomplete="off" spellcheck="false" /></label>
+        <button type="submit">show</button>
+        <button type="button" id="procgen-next">next</button>
       </form>
       <div class="procgen-stage">
         <canvas id="procgen-map" width="638" height="588"></canvas>
@@ -52,17 +52,17 @@ export function startProcgen(root: HTMLElement): void {
       drawWorld(context, world);
       const check = assessWorld(world);
       report.textContent = [
-        `Souostroví č. ${seed}`,
-        `generátor ${GENERATOR_VERSION}`,
-        `čas ${elapsed.toFixed(1)} ms`,
-        `ostrovy ${check.islands}, heliporty ${check.heliports}, domy ${check.houses}, stromy ${check.trees}`,
-        check.ok ? "kontrola: v pořádku" : `kontrola: ${check.reasons.join("; ")}`,
+        `Archipelago no. ${seed}`,
+        `generator ${GENERATOR_VERSION}`,
+        `time ${elapsed.toFixed(1)} ms`,
+        `islands ${check.islands}, heliports ${check.heliports}, houses ${check.houses}, trees ${check.trees}`,
+        check.ok ? "check: ok" : `check: ${check.reasons.join("; ")}`,
       ].join("\n");
     } catch (error) {
       const elapsed = performance.now() - started;
       context.fillStyle = "#12343c";
       context.fillRect(0, 0, canvas.width, canvas.height);
-      report.textContent = [`Souostroví č. ${seed}`, `čas ${elapsed.toFixed(1)} ms`, error instanceof Error ? error.message : "Generátor selhal."].join("\n");
+      report.textContent = [`Archipelago no. ${seed}`, `time ${elapsed.toFixed(1)} ms`, error instanceof Error ? error.message : "The generator failed."].join("\n");
     }
   };
 

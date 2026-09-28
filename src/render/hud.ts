@@ -39,9 +39,20 @@ export function createHud(root: HTMLElement, debug: boolean): Hud {
   root.appendChild(hud);
 
   const pause = document.createElement("div");
-  pause.className = "pause-banner";
-  pause.textContent = "Pauza";
+  pause.className = "screen";
+  pause.id = "pause-screen";
   pause.hidden = true;
+  pause.innerHTML = `
+    <div class="screen-card">
+      <h1>Paused</h1>
+      <label class="volume-setting">Volume
+        <input id="music-volume" type="range" min="0" max="100" step="1" value="35" />
+        <b id="music-volume-readout">35</b>
+      </label>
+      <p class="screen-action">Esc — continue</p>
+      <p class="screen-action">Q — main menu</p>
+    </div>
+  `;
   root.appendChild(pause);
 
   const title = document.createElement("div");
@@ -50,22 +61,22 @@ export function createHud(root: HTMLElement, debug: boolean): Hud {
   title.innerHTML = `
     <div class="screen-card" id="intro-title">
       <h1>Cyclone</h1>
-      <p>Vyzvedni navijákem pět beden a přistaň s nimi na základně. Lidi ber po cestě, palivo doplňuj na heliportech.</p>
+      <p>Winch up five crates and land them at the base. Pick up people along the way, and refuel at the heliports.</p>
       <ul>
-        <li>Q a šipka nahoru stoupání, A a šipka dolů klesání</li>
-        <li>O a šipka vlevo, P a šipka vpravo zatáčení</li>
-        <li>Mezerník dopředu, N pohled</li>
-        <li>M mapa, S zvuk, Esc pauza, R rozmístění</li>
+        <li>Q and up arrow to climb, A and down arrow to descend</li>
+        <li>O and left arrow, P and right arrow to turn</li>
+        <li>Space to fly forward, N to change the view</li>
+        <li>M map, S sound, Esc pause, R layout</li>
       </ul>
-      <p id="intro-layout" class="screen-action">Rozmístění: náhodné</p>
-      <p id="intro-map" class="screen-action">Mapa: Originál</p>
+      <p id="intro-layout" class="screen-action">Layout: random</p>
+      <p id="intro-map" class="screen-action">Map: Original</p>
       <form id="map-form" class="map-form">
-        <label>Číslo <input id="map-number" inputmode="numeric" autocomplete="off" spellcheck="false" /></label>
-        <button type="submit">Souostroví</button>
-        <button type="button" id="map-original">Originál</button>
+        <label>Number <input id="map-number" inputmode="numeric" autocomplete="off" spellcheck="false" /></label>
+        <button type="submit">Archipelago</button>
+        <button type="button" id="map-original">Original</button>
       </form>
-      <p class="screen-action">G vylosuje souostroví, Enter ho použije</p>
-      <p class="screen-action">Mezerník spustí hru</p>
+      <p class="screen-action">G rolls an archipelago, Enter uses it</p>
+      <p class="screen-action">Space starts the game</p>
     </div>
   `;
   root.appendChild(title);
@@ -82,8 +93,8 @@ export function createHud(root: HTMLElement, debug: boolean): Hud {
       <div id="end-board" hidden></div>
       <p id="end-seed"></p>
       <p id="end-map"></p>
-      <button type="button" class="screen-action" id="end-replay">Hrát znovu stejnou hru</button>
-      <p class="screen-action" id="end-continue">Mezerník — nová hra</p>
+      <button type="button" class="screen-action" id="end-replay">Play the same game again</button>
+      <p class="screen-action" id="end-continue">Space — new game</p>
     </div>
   `;
   root.appendChild(end);
@@ -105,10 +116,10 @@ export function createHud(root: HTMLElement, debug: boolean): Hud {
     const panel = document.createElement("div");
     panel.className = "panel";
     panel.innerHTML = `
-      <h1>Cyclone, ladění</h1>
+      <h1>Cyclone, debug</h1>
       <p id="debug-readout"></p>
       <p id="debug-heliports" class="heliports"></p>
-      <button type="button" id="free-camera">Volná kamera</button>
+      <button type="button" id="free-camera">Free camera</button>
     `;
     root.appendChild(panel);
     debugReadout = panel.querySelector("#debug-readout");
@@ -132,7 +143,7 @@ export function createHud(root: HTMLElement, debug: boolean): Hud {
       title.hidden = view.phase !== "intro";
       end.hidden = view.phase !== "end";
       const layout = document.querySelector("#intro-layout");
-      if (layout) layout.textContent = view.layout === "original" ? "Rozmístění: originální" : "Rozmístění: náhodné";
+      if (layout) layout.textContent = view.layout === "original" ? "Layout: original" : "Layout: random";
       const mapLine = document.querySelector("#intro-map");
       if (mapLine) mapLine.textContent = mapCaption(view.mapSeed, view.generator);
       const seedLine = document.querySelector("#end-seed");
@@ -176,7 +187,7 @@ export function createHud(root: HTMLElement, debug: boolean): Hud {
       if (debug && !heliportsPrinted) {
         const block = root.querySelector("#debug-heliports");
         if (block) {
-          block.textContent = [`Heliporty (${view.heliports.length})`, ...view.heliports.map(formatHeliport)].join("\n");
+          block.textContent = [`Heliports (${view.heliports.length})`, ...view.heliports.map(formatHeliport)].join("\n");
           console.info(block.textContent);
           heliportsPrinted = true;
         }
@@ -186,8 +197,8 @@ export function createHud(root: HTMLElement, debug: boolean): Hud {
 }
 
 function mapCaption(mapSeed: string | null, generator: number | null): string {
-  if (!mapSeed || generator === null) return "Mapa: Originál";
-  return `Souostroví č. ${mapSeed} · generátor ${generator}`;
+  if (!mapSeed || generator === null) return "Map: Original";
+  return `Archipelago no. ${mapSeed} · generator ${generator}`;
 }
 
 function fillEnd(view: GameView): void {
@@ -196,17 +207,17 @@ function fillEnd(view: GameView): void {
   const score = document.querySelector("#end-score");
   if (!title || !reason || !score) return;
   const success = view.outcome === "success";
-  title.textContent = success ? "Úspěch" : "Neúspěch";
+  title.textContent = success ? "Success" : "Failure";
   reason.textContent = success
-    ? "Všechny bedny jsou na základně."
+    ? "All the crates are at the base."
     : view.failReason === "lives"
-      ? "Ztratil jsi všechny vrtulníky."
-      : "Vypršel čas.";
+      ? "You lost every helicopter."
+      : "Time ran out.";
   score.innerHTML = [
-    line("Bedny", `${view.crates} × ${SCORE_CRATE}`, view.crateScore),
-    line("Lidé", `${view.people} × ${SCORE_PERSON}`, view.peopleScore),
-    line("Časový bonus", `${view.timeBonus / SCORE_SECOND} × ${SCORE_SECOND}`, view.timeBonus),
-    line("Celkem", "", view.score),
+    line("Crates", `${view.crates} × ${SCORE_CRATE}`, view.crateScore),
+    line("People", `${view.people} × ${SCORE_PERSON}`, view.peopleScore),
+    line("Time bonus", `${view.timeBonus / SCORE_SECOND} × ${SCORE_SECOND}`, view.timeBonus),
+    line("Total", "", view.score),
   ].join("");
 }
 

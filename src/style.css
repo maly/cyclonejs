@@ -568,16 +568,32 @@ button.screen-action[hidden] {
   animation: fuel-blink 0.8s steps(2, end) infinite;
 }
 
-.pause-banner {
-  position: absolute;
-  z-index: 4;
-  top: 16px;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 6px 14px;
-  background: rgba(255, 248, 236, 0.94);
-  border: 1px solid #1d3a32;
+#pause-screen {
+  z-index: 6;
+}
+
+#pause-screen .screen-card {
+  pointer-events: auto;
+}
+
+.volume-setting {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 14px 0 4px;
   font-weight: 700;
+}
+
+.volume-setting input {
+  flex: 1;
+  min-width: 0;
+  accent-color: #1d3a32;
+}
+
+.volume-setting b {
+  width: 4.5em;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 
 .heliports {
@@ -589,7 +605,6 @@ button.screen-action[hidden] {
 
 .hud[hidden],
 .screen[hidden],
-.pause-banner[hidden],
 .map-layer[hidden],
 .plane-arrow[hidden] {
   display: none !important;

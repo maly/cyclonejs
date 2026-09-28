@@ -135,4 +135,4 @@ export function islandIdAt(world: World, x: number, z: number): number | null {
   return code === 0 ? null : code - 1;
 }
 
-export const SURFACE_NAME = ["moře", "tráva", "písek", "silnice", "bílá", "střecha", "beton"] as const;
+export const SURFACE_NAME = ["sea", "grass", "sand", "road", "white", "roof", "concrete"] as const;

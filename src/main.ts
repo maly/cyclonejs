@@ -110,6 +110,7 @@ async function startGame(root: HTMLElement, debug: boolean, search: URLSearchPar
         }
         if (command.toggleMap) flight.toggleMap();
         if (command.toggleMute) sound.toggle();
+        paintVolume();
         const replaced = applyMenu(command, replayClick);
         replayClick = false;
         if (replaced) {
@@ -126,6 +127,7 @@ async function startGame(root: HTMLElement, debug: boolean, search: URLSearchPar
           const command = input.sample();
           if (command.toggleMap) flight.toggleMap();
           if (command.toggleMute) sound.toggle();
+          paintVolume();
           if (debug && command.reseed) {
             seed = (current.seed + 1) >>> 0;
             const placed = openLayout(world, index, seed, layout, mapSeed);
@@ -149,11 +151,38 @@ async function startGame(root: HTMLElement, debug: boolean, search: URLSearchPar
     flight.sync(presentation, hidden || current.paused ? 0 : frameDt);
     hiscores.sync(current, now);
     sound.update(presentation, frameEvents);
+    const focused = document.activeElement;
+    if (!(current.phase === "play" && current.paused) && focused instanceof HTMLElement && focused.id === "music-volume") focused.blur();
     requestAnimationFrame(frame);
   };
   requestAnimationFrame(frame);
 
+  bindVolume(sound);
+
+  function paintVolume(): void {
+    const readout = document.querySelector("#music-volume-readout");
+    if (!readout) return;
+    readout.textContent = sound.muted() ? "Muted" : String(Math.round(sound.volume() * 100));
+  }
+
+  function bindVolume(output: typeof sound): void {
+    const slider = document.querySelector<HTMLInputElement>("#music-volume");
+    if (!slider) return;
+    slider.value = String(Math.round(output.volume() * 100));
+    paintVolume();
+    slider.addEventListener("input", () => {
+      output.setVolume(Number(slider.value) / 100);
+      paintVolume();
+    });
+  }
+
   function applyMenu(command: ReturnType<typeof input.sample>, replay: boolean): boolean {
+    if (command.quit && current.phase === "play" && current.paused) {
+      seed = current.seed;
+      show(seed, layout);
+      current = createGame(world, options(seed, layout));
+      return true;
+    }
     if (command.toggleLayout && current.phase === "intro") {
       layout = layout === "random" ? "original" : "random";
       saveLayout(window.localStorage, layout);
@@ -216,12 +245,12 @@ async function loadWorld(root: HTMLElement, search: URLSearchParams): Promise<{ 
   if (raw === null) return { world: worldFromTerrain(terrainFile as TerrainFile), mapSeed: null };
   const note = document.createElement("div");
   note.className = "generating";
-  note.textContent = "Generuji souostroví…";
+  note.textContent = "Generating the archipelago…";
   root.append(note);
   await paintFrame();
   const parsed = parseMapParam(raw);
   if (parsed === null) {
-    note.textContent = "Číslo mapy není platné.";
+    note.textContent = "The map number is not valid.";
     return null;
   }
   try {
@@ -229,7 +258,7 @@ async function loadWorld(root: HTMLElement, search: URLSearchParams): Promise<{ 
     note.remove();
     return { world, mapSeed: parsed };
   } catch (error) {
-    note.textContent = error instanceof Error ? error.message : "Generátor selhal.";
+    note.textContent = error instanceof Error ? error.message : "The generator failed.";
     return null;
   }
 }
