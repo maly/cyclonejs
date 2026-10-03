@@ -14,10 +14,11 @@
     "mapgen": "npm run mapgen:build && npm run mapgen:render && npm run mapgen:verify",
     "dev": "vite",
     "build": "vite build",
+    "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
   "dependencies": {
-    "three": "^0.180.0"
+    "three": "^0.186.1"
   },
   "devDependencies": {
     "@types/node": "^24.13.6",
