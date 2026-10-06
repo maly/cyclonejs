@@ -6,7 +6,7 @@ Výšky terénu, význam dlaždic ani názvy ostrovů tady nejsou. Nástroj ukl�
 
 ## Spuštění
 
-Z kořene repozitáře, Node 20 nebo novější:
+Z kořene repozitáře, Node 22 nebo novější:
 
 ```bash
 npm install
