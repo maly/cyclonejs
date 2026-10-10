@@ -804,9 +804,9 @@ function paveToward(grid: Grid, id: number, x: number, z: number, w: number, h: 
     guard += 1;
     const stepX = cx === target.x ? 0 : target.x > cx ? 1 : -1;
     const stepZ = cz === target.z ? 0 : target.z > cz ? 1 : -1;
-    const horizontal = Math.abs(target.x - cx) >= Math.abs(target.z - cz);
-    const nx = horizontal ? cx + stepX : cx;
-    const nz = horizontal ? cz : cz + stepZ;
+    const horizontal: boolean = Math.abs(target.x - cx) >= Math.abs(target.z - cz);
+    const nx: number = horizontal ? cx + stepX : cx;
+    const nz: number = horizontal ? cz : cz + stepZ;
     if (!roadCell(grid, id, nx, nz, grid.height[cz * WORLD_WIDTH + cx] ?? 0)) break;
     const index = nz * WORLD_WIDTH + nx;
     if (grid.surface[index] === GRASS || grid.surface[index] === SAND) grid.surface[index] = ROAD;
@@ -1188,7 +1188,7 @@ function stampRelief(grid: Grid, draft: Draft, state: RngState, coast: Int16Arra
   if (draft.form === "crescent") return state;
   if (draft.form === "sand") {
     for (let z = box.minZ; z <= box.maxZ; z++) {
-      for (let x = box.minX; x <= box.maxX; x++) {
+      for (let x: number = box.minX; x <= box.maxX; x++) {
         const index = z * WORLD_WIDTH + x;
         if (grid.island[index] !== draft.id + 1) continue;
         grid.height[index] = 1;
@@ -1219,7 +1219,7 @@ function stampRelief(grid: Grid, draft: Draft, state: RngState, coast: Int16Arra
   state = crown.state;
   // Klín planiny k moři po blocích 2×2, ať terasa není jednobuňková.
   for (let z = box.minZ; z <= box.maxZ; z += 2) {
-    for (let x = box.minX; x <= box.maxX; x += 2) {
+    for (let x: number = box.minX; x <= box.maxX; x += 2) {
       const dx = x - draft.x;
       const dz = z - draft.z;
       const turn = sectorDistance(sector(dx, dz), facing.value);
@@ -1238,7 +1238,7 @@ function stampRelief(grid: Grid, draft: Draft, state: RngState, coast: Int16Arra
       if (shore && height > 3) height = 3;
       for (let dzBlock = 0; dzBlock < 2; dzBlock++) {
         for (let dxBlock = 0; dxBlock < 2; dxBlock++) {
-          const nx = x + dxBlock;
+          const nx: number = x + dxBlock;
           const nz = z + dzBlock;
           if (nx >= WORLD_WIDTH || nz >= WORLD_DEPTH) continue;
           const index = nz * WORLD_WIDTH + nx;
